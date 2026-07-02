@@ -1,0 +1,10 @@
+Invoice No: INV-44920
+From: Northside Office Supplies
+To: Bright Leaf Studio
+
+Invoice date: July 1, 2026
+Payment due by July 12, 2026.
+Amount due: $342.50
+
+Please verify the delivery list and pay by bank transfer before the due date.
+For questions, email billing@northside.example.

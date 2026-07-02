@@ -1,0 +1,8 @@
+River City Electric Utility Bill
+Customer: Jordan Lee
+Account Number: 7788-2219-004
+Service address: 1400 Lake Road
+
+Past due balance: $126.40
+Payment must be received by July 5, 2026 to avoid service interruption.
+Call 555-802-1100 to request a payment arrangement within 3 business days.

@@ -1,0 +1,5 @@
+pydantic>=2.7,<3
+python-dateutil>=2.9,<3
+mcp[cli]>=1.2
+google-adk
+pytest>=8,<9

@@ -1,0 +1,40 @@
+{
+  "templates": [
+    {
+      "intent": "school_response",
+      "aliases": ["school_notice"],
+      "subject": "School notice next steps",
+      "body_template": "Hello {sender},\n\nI reviewed the notice and understand the next steps are:\n{actions}\n\nI will handle these before {due_date}. Please let me know if any additional form or confirmation is required.\n\nThank you."
+    },
+    {
+      "intent": "invoice_payment_check",
+      "aliases": ["invoice"],
+      "subject": "Invoice review and payment checklist",
+      "body_template": "Hello {sender},\n\nI am reviewing the invoice and will verify the amount, due date, and payment instructions before taking action. Current next steps:\n{actions}\n\nIf anything is missing or incorrect, please send clarification before {due_date}.\n\nThank you."
+    },
+    {
+      "intent": "utility_bill_response",
+      "aliases": ["utility_bill"],
+      "subject": "Utility bill action checklist",
+      "body_template": "Hello {sender},\n\nI reviewed the utility notice and understand there may be service or payment consequences. My next steps are:\n{actions}\n\nI will confirm the balance and deadline before taking payment action. Please confirm available assistance or payment arrangement options if applicable.\n\nThank you."
+    },
+    {
+      "intent": "appointment_confirmation",
+      "aliases": ["appointment_slip"],
+      "subject": "Appointment confirmation checklist",
+      "body_template": "Hello {sender},\n\nI reviewed the appointment notice. My next steps are:\n{actions}\n\nPlease confirm whether any documents, fees, or arrival instructions are required before {due_date}.\n\nThank you."
+    },
+    {
+      "intent": "intake_followup",
+      "aliases": ["ngo_intake"],
+      "subject": "Intake follow-up checklist",
+      "body_template": "Hello {sender},\n\nI reviewed the intake instructions and noted these next steps:\n{actions}\n\nPlease confirm whether copies or originals are required and whether there is a safer way to submit sensitive documents.\n\nThank you."
+    },
+    {
+      "intent": "general_checklist",
+      "aliases": ["general_notice"],
+      "subject": "Document next-step checklist",
+      "body_template": "Hello {sender},\n\nI reviewed the document and identified these next steps:\n{actions}\n\nI will confirm details against the source document before taking action.\n\nThank you."
+    }
+  ]
+}

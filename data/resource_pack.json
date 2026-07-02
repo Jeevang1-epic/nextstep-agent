@@ -1,0 +1,40 @@
+{
+  "resources": [
+    {
+      "category": "school",
+      "title": "School notice handling",
+      "guidance": "Check the permission slip, payment amount, due date, student name, and required guardian signature. Do not send student identifiers in an unredacted message.",
+      "keywords": ["student", "permission", "guardian", "field trip", "school"]
+    },
+    {
+      "category": "billing",
+      "title": "Invoice validation",
+      "guidance": "Verify vendor identity, invoice number, amount, due date, and payment instructions before paying or replying.",
+      "keywords": ["invoice", "amount", "vendor", "payment", "due"]
+    },
+    {
+      "category": "utility",
+      "title": "Utility notice risk",
+      "guidance": "Prioritize notices mentioning shutoff, disconnect, late fees, or payment arrangements. Confirm the balance directly through a trusted channel.",
+      "keywords": ["utility", "disconnect", "shutoff", "balance", "payment arrangement"]
+    },
+    {
+      "category": "appointment",
+      "title": "Appointment preparation",
+      "guidance": "Confirm date, time, location, documents to bring, cancellation rules, and contact method.",
+      "keywords": ["appointment", "clinic", "bring", "confirm", "reschedule"]
+    },
+    {
+      "category": "intake",
+      "title": "Sensitive intake forms",
+      "guidance": "Minimize sensitive details in messages. Ask for secure submission methods before sending IDs, income records, or medical details.",
+      "keywords": ["intake", "documents", "secure", "case worker", "identity"]
+    },
+    {
+      "category": "general",
+      "title": "General document triage",
+      "guidance": "Identify sender, deadline, requested action, consequence, contact channel, and any sensitive data before drafting a response.",
+      "keywords": ["deadline", "action", "notice", "contact", "response"]
+    }
+  ]
+}
