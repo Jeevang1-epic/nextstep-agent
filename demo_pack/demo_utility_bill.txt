@@ -1,0 +1,7 @@
+Sample City Utility Notice
+Customer: Demo Customer
+Account Number: 4000-2200-119
+
+Past due balance: $96.30
+Payment must be received by July 5, 2026 to avoid service interruption.
+Call 555-410-2200 within 3 business days to ask about a payment arrangement.

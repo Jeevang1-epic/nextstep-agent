@@ -1,43 +1,142 @@
 # NextStep Agent
 
-Portfolio-quality document-to-action concierge agent for the Kaggle AI Agents Intensive Capstone.
+Turn confusing real-world documents into safe, verified next steps.
 
-NextStep Agent turns confusing real-world documents into safe, verified next steps with multi-agent orchestration, MCP tools, Gemini structured extraction, redaction, evaluation, and a Streamlit demo.
+## What It Does
 
-## Problem
+NextStep Agent is a multimodal document-to-action concierge for school notices, invoices, utility bills, appointment slips, small-business notices, and intake forms. A user pastes or uploads a document, and the system extracts key facts, detects deadlines, checks risk, uses local MCP tools, creates a prioritized next-step plan, drafts a cautious response or checklist, verifies the draft against the source, redacts sensitive information, and saves redacted tasks locally.
 
-People receive documents that look simple but carry hidden consequences: school notices, invoices, utility bills, appointment slips, rental maintenance notices, intake forms, fee circulars, and application deadlines. The user needs to know what matters, what to do next, when it is due, what risk exists, and what information should not be exposed.
+## Why It Matters
 
-## Demo Flow
+- People miss deadlines because important actions are buried inside everyday documents.
+- A single chatbot response can be hard to inspect, verify, or safely reuse.
+- NextStep Agent makes the workflow traceable: agents, tools, risk checks, verification, redaction, and evaluations are visible.
+
+## Demo Screenshot Placeholder
+
+Add the final Streamlit screenshot here after deployment.
+
+```text
+STREAMLIT_PUBLIC_URL_HERE
+```
+
+Recommended screenshot: Streamlit app with the school notice sample, agent trace, MCP tool calls, redaction panel, and action plan visible.
+
+## Quick Demo Commands
 
 ```powershell
-python -m nextstep_agent.agent examples/sample_school_notice.txt --current-date 2026-07-02 --trace
-python -m nextstep_agent.agent examples/sample_invoice.txt --current-date 2026-07-02 --json
+python -m nextstep_agent.agent demo_pack/demo_school_notice.txt --current-date 2026-07-02 --trace
+python -m nextstep_agent.agent demo_pack/demo_invoice.txt --current-date 2026-07-02 --json
 python evals/run_evals.py
+```
+
+## Streamlit Demo
+
+```powershell
 streamlit run app.py
 ```
 
-Optional Gemini extraction:
+The app can be run locally and deployed on Streamlit Community Cloud. It includes sample selection, paste/upload input, optional Gemini mode, agent trace, extracted facts, risk assessment, MCP calls, next steps, draft/checklist, verification, redacted output, and saved task metadata.
+
+## Evaluation Result
+
+10/10 eval scenarios passed, 80/80 deterministic score.
+
+## Competition Alignment
+
+| Competition priority | How NextStep Agent addresses it | Proof |
+| --- | --- | --- |
+| Track: Concierge Agents | Helps users complete a practical document-to-action workflow | CLI, Streamlit app, demo pack |
+| Multi-agent architecture | Eight named stages with typed handoffs and trace output | `nextstep_agent/agent.py`, `docs/architecture.md` |
+| Google ADK alignment | ADK-compatible agent definitions with deterministic local execution | `build_adk_agents()` in `nextstep_agent/agent.py` |
+| Gemini usage | Optional structured extraction for text and optional multimodal image extraction | `nextstep_agent/gemini_client.py` |
+| MCP usage | Local tools for policy lookup, templates, deadlines, task storage, and safety checks | `mcp_server/server.py`, trace metadata |
+| Security and redaction | Redaction stage, safety boundary checks, verifier gates, ignored task store | `nextstep_agent/redaction.py`, `nextstep_agent/verifier.py`, `.gitignore` |
+| Evaluation | 10 deterministic cases covering varied document scenarios | `evals/cases.json`, `evals/run_evals.py` |
+| Demo readiness | Streamlit UI, demo docs, video script, media prompts, release checklist | `app.py`, `docs/demo_script.md`, `SUBMISSION_CHECKLIST.md` |
+
+## For Judges
+
+### 60-Second Review Path
+
+1. Read the top of this README.
+2. Scan the competition alignment table.
+3. Run `python evals/run_evals.py` and confirm `10 passed, 0 failed, 80/80`.
+4. Run the school notice trace command in the Quick Demo section.
+
+### 5-Minute Review Path
+
+1. Start Streamlit with `streamlit run app.py`.
+2. Choose the sample school notice.
+3. Review the agent trace, MCP tool calls, risk assessment, redaction, and saved task metadata.
+4. Run the invoice JSON command to inspect the typed `FinalResponse`.
+5. Open `docs/demo_script.md` for the intended video walkthrough.
+
+### Deep Technical Review Path
+
+1. Read `docs/architecture.md`.
+2. Inspect the Pydantic contracts in `nextstep_agent/schemas.py`.
+3. Inspect the pipeline in `nextstep_agent/agent.py`.
+4. Inspect MCP tool implementations in `mcp_server/server.py`.
+5. Review `evals/cases.json`, `evals/run_evals.py`, and tests in `tests/`.
+6. Run `python scripts/final_qa.py`.
+
+## Safety And Scope
+
+NextStep Agent provides organizational assistance only. It is not legal, medical, financial, tax, or professional advice. The final draft is intended for user review before sending.
+
+No API keys or secrets are committed. `.env`, `.streamlit/secrets.toml`, and `data/tasks.jsonl` are ignored by git.
+
+Gemini is optional. Text demos, tests, and deterministic evals work without an API key. If `GOOGLE_API_KEY` is configured, Gemini can improve structured extraction and enable image input. Image and scanned-document extraction are gracefully gated when Gemini is unavailable.
+
+## Setup
 
 ```powershell
-python -m nextstep_agent.agent examples/sample_school_notice.txt --current-date 2026-07-02 --use-gemini --trace
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
 
-Image input requires Gemini:
+On macOS or Linux:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+## Optional Gemini Setup
+
+Create `.env` from `.env.example`:
 
 ```powershell
-python -m nextstep_agent.agent path/to/document.png --use-gemini --trace
+GOOGLE_API_KEY=your_key_here
+NEXTSTEP_MODEL=gemini-flash-latest
+```
+
+For Streamlit Community Cloud, add the same values in app secrets. Do not commit `.env` or `.streamlit/secrets.toml`.
+
+Optional Gemini text extraction:
+
+```powershell
+python -m nextstep_agent.agent demo_pack/demo_school_notice.txt --current-date 2026-07-02 --use-gemini --trace
+```
+
+Optional image extraction:
+
+```powershell
+python -m nextstep_agent.agent path/to/document.png --current-date 2026-07-02 --use-gemini --trace
 ```
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    A["Upload or pasted document"] --> B["Intake Agent"]
+    A["Upload, pasted text, PDF, or image"] --> B["Intake Agent"]
     B --> C["Extraction Agent"]
     C --> D{"Gemini available?"}
-    D -->|Yes| E["Gemini structured extraction"]
-    D -->|No| F["Deterministic extraction"]
+    D -->|Yes| E["Gemini structured or image extraction"]
+    D -->|No| F["Deterministic text extraction"]
     E --> G["DocumentFacts"]
     F --> G
     G --> H["Risk & Priority Agent"]
@@ -47,16 +146,16 @@ flowchart LR
     K --> L["Drafting Agent"]
     L --> M["Verification Agent"]
     M --> N["Redaction Agent"]
-    N --> O["FinalResponse JSON and Streamlit UI"]
+    N --> O["FinalResponse, Streamlit UI, saved redacted tasks"]
 ```
 
-## Agents
+## Agent Stages
 
-- Intake Agent: normalizes uploaded or pasted text.
-- Extraction Agent: extracts typed facts with heuristics or Gemini.
-- Risk & Priority Agent: calculates deadline urgency and consequences.
+- Intake Agent: normalizes uploaded or pasted input.
+- Extraction Agent: extracts typed facts with deterministic rules or Gemini.
+- Risk & Priority Agent: calculates urgency and consequences.
 - Resource Lookup Agent: calls local MCP tools for guidance and templates.
-- Action Planner Agent: creates prioritized source-backed actions.
+- Action Planner Agent: creates prioritized, source-backed actions.
 - Drafting Agent: writes a cautious response or checklist.
 - Verification Agent: checks grounding and unsafe claims.
 - Redaction Agent: removes sensitive data from final output.
@@ -73,24 +172,22 @@ flowchart LR
 
 The CLI and app show why each MCP tool was called.
 
-## Security And Redaction
+## Demo Pack
 
-NextStep Agent redacts:
+The `demo_pack/` directory contains fictional, safe documents for recording and live demos:
 
-- Email addresses.
-- Phone numbers.
-- Account-like long numbers.
-- 12 digit ID-like sequences without claiming official validation.
-- Simple addresses.
-- Labeled account, invoice, student, patient, client, tenant, meter, and policy identifiers.
-- Labeled names.
+- `demo_school_notice.txt`
+- `demo_invoice.txt`
+- `demo_utility_bill.txt`
+- `demo_internship_deadline.txt`
 
-The verifier rejects unsupported payment, legal, or medical claims. The app warns that it provides organizational help only, not legal, medical, or financial advice.
+The `examples/` directory contains the original sample documents used during development.
 
-## Evaluation Results
+## Evaluation
 
 ```powershell
 python evals/run_evals.py
+python -m pytest -q
 ```
 
 Current deterministic result:
@@ -102,78 +199,31 @@ Current deterministic result:
 
 The suite covers school, invoice, utility, appointment, NGO intake, rental maintenance, internship, medical appointment, small business order, and scholarship or college fee circular scenarios.
 
-## Setup
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-## Gemini Setup
-
-Gemini is optional. Without an API key, text documents use deterministic extraction.
-
-Create `.env` from `.env.example`:
-
-```powershell
-GOOGLE_API_KEY=your_key_here
-NEXTSTEP_MODEL=gemini-flash-latest
-```
-
-Do not commit `.env` or `.streamlit/secrets.toml`.
-
-## Streamlit Demo
-
-```powershell
-streamlit run app.py
-```
-
-The app includes:
-
-- Sample document dropdown.
-- Text area.
-- File uploader for `.txt`, `.md`, `.pdf`, `.png`, `.jpg`, and `.jpeg`.
-- Gemini toggle.
-- Agent trace.
-- Extracted facts, risk, MCP calls, next-step plan, draft/checklist, verification, redacted output, and saved tasks.
-
 ## Deployment
 
-Streamlit Community Cloud deployment is documented in `docs/deployment.md`.
+Deployment is documented in `docs/deployment.md`.
 
 Short version:
 
 1. Push the repo to GitHub.
-2. Create a Streamlit Community Cloud app with `app.py` as the entrypoint.
-3. Add `GOOGLE_API_KEY` and `NEXTSTEP_MODEL` in Advanced settings if Gemini is desired.
-4. Deploy.
-
-The app still works in fallback mode without `GOOGLE_API_KEY`.
-
-## Competition Alignment
-
-| Requirement / concept | Where demonstrated | File or demo proof |
-| --- | --- | --- |
-| Multi-agent system | Eight named stages and trace output | `nextstep_agent/agent.py`, `--trace` |
-| Google ADK alignment | ADK-compatible agent construction with local fallback | `nextstep_agent/agent.py` |
-| Gemini structured extraction | Optional text and image extraction path | `nextstep_agent/gemini_client.py`, `--use-gemini` |
-| MCP tool usage | Local MCP server and visible tool calls | `mcp_server/server.py`, `metadata.mcp_calls` |
-| Security/redaction | Redaction and verifier gates | `nextstep_agent/redaction.py`, `nextstep_agent/verifier.py` |
-| Deployability | Streamlit app, config, secrets example, deployment guide | `app.py`, `.streamlit/`, `docs/deployment.md` |
-| Agent skills | Clear specialized responsibilities | `nextstep_agent/prompts.py`, `docs/architecture.md` |
-| Evaluation discipline | Ten deterministic fixtures and markdown report | `evals/cases.json`, `evals/run_evals.py` |
-| Demo/video proof | Generated snapshots and timed script | `docs/demo_outputs/`, `docs/demo_script.md` |
+2. Create a Streamlit Community Cloud app.
+3. Select this repository.
+4. Set the main file to `app.py`.
+5. Add `GOOGLE_API_KEY` in secrets only if Gemini is available.
+6. Deploy and test the school notice sample.
+7. Replace `STREAMLIT_PUBLIC_URL_HERE` in this README and `SUBMISSION_CHECKLIST.md`.
 
 ## Repository Structure
 
 ```text
 nextstep_agent/       Core agent pipeline, schemas, redaction, Gemini, loaders
 mcp_server/           Local MCP server tools
-data/                 Templates, resource pack, runtime task store path
-examples/             Demo text documents
+data/                 Templates, resource pack, ignored runtime task store path
+demo_pack/            Fictional demo documents for final recording
+examples/             Development sample text documents
 evals/                Evaluation fixtures and runner
-docs/                 Architecture, deployment, demo script, writeup, snapshots
+docs/                 Architecture, deployment, demo script, writeup, media prompts
+scripts/              Final QA runner
 tests/                Unit and pipeline tests
 app.py                Streamlit demo
 ```
@@ -181,15 +231,17 @@ app.py                Streamlit demo
 ## Limitations
 
 - Image extraction requires Gemini and an API key.
-- Text-based PDFs work through `pypdf`; scanned PDFs need Gemini/image handling or future OCR.
-- Local JSONL task storage is demo-grade, not multi-user production storage.
-- Heuristic extraction is conservative and does not replace human review.
-- The tool gives organizational help only.
+- Text-based PDFs work through `pypdf`; scanned PDFs need Gemini image handling or future OCR.
+- Local JSONL task storage is demo-grade, not hosted multi-user storage.
+- Deterministic extraction is conservative and may miss unusual wording.
+- The tool provides organizational assistance only and requires human review.
 
-## Future Work
+## Release Candidate Materials
 
-- Add hosted database storage.
-- Add multilingual and OCR-focused evals.
-- Add Gemini-vs-heuristic scoring.
-- Add richer ADK runner orchestration.
-- Package a deployed public demo URL for final submission.
+- `SUBMISSION_CHECKLIST.md`
+- `RELEASE_NOTES.md`
+- `docs/kaggle_writeup_draft.md`
+- `docs/demo_script.md`
+- `docs/video_shot_list.md`
+- `docs/media_assets.md`
+- `docs/gemini_live_comparison.md`

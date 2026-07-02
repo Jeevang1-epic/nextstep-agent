@@ -1,0 +1,9 @@
+Northview School Notice
+Student: Example Student
+Student ID: SCH-20491
+
+The class museum visit is scheduled for July 14, 2026.
+Please return the signed permission form and $12 fee by July 8, 2026.
+Students should bring lunch and arrive by 8:00 AM.
+
+Questions: office@northview.example

@@ -1,86 +1,180 @@
 # Demo Script
 
-## 0:00-0:25 Problem Hook
+Target length: 4-5 minutes.
 
-Every week people receive confusing notices: a school slip, a bill, an invoice, a clinic reminder, or an intake form. The problem is not just reading the document. The problem is knowing what to do next, by when, what could go wrong, and what information should not be exposed in a reply.
+## Screen Recording Checklist
 
-NextStep Agent is built for that moment.
+- Browser tab open to the GitHub README.
+- Terminal open at the repository root.
+- Streamlit app ready or easy to start with `streamlit run app.py`.
+- Demo files available in `demo_pack/`.
+- Terminal font large enough to read in video.
+- No `.env`, secrets, local API keys, or personal files visible.
+- If using Gemini, verify `GOOGLE_API_KEY` is configured before recording.
+- If not using Gemini, mention deterministic fallback clearly.
+- Run `python evals/run_evals.py` once before recording so the report is fresh.
 
-## 0:25-0:55 Solution Overview
+## Exact Narration
 
-NextStep Agent turns a document into a safe action plan. A user can paste text or upload a text, PDF, or Gemini-backed image document. The system extracts key facts, calculates deadlines, checks risk, looks up local resources through MCP tools, creates prioritized next steps, drafts a response or checklist, verifies it against the source, redacts sensitive information, and stores the tasks locally.
+### 0:00-0:25 - GitHub README And Problem
 
-It works without an API key using deterministic extraction, and it can use Gemini structured extraction when `GOOGLE_API_KEY` is configured.
+Show: GitHub README top section.
 
-## 0:55-1:35 Architecture And Agents
+Narration:
 
-The workflow is intentionally multi-agent:
+```text
+This is NextStep Agent, a document-to-action concierge for the Kaggle AI Agents Intensive capstone. The one-line goal is simple: turn confusing real-world documents into safe, verified next steps.
 
-- Intake Agent normalizes the document.
-- Extraction Agent creates typed facts, using Gemini when available.
-- Risk & Priority Agent calculates urgency.
-- Resource Lookup Agent calls MCP tools.
-- Action Planner Agent creates source-backed tasks.
-- Drafting Agent writes a cautious response.
-- Verification Agent checks for unsupported claims.
-- Redaction Agent removes sensitive fields before final output.
-
-The schema handoffs are Pydantic models, so the output is structured and testable.
-
-## 1:35-2:45 Live Demo: School Notice And Invoice
-
-First run:
-
-```powershell
-python -m nextstep_agent.agent examples/sample_school_notice.txt --current-date 2026-07-02 --trace
+The problem is that everyday documents often hide important actions. A school notice, invoice, utility bill, appointment slip, or intake form may include deadlines, risk, payment details, or sensitive identifiers. The user does not just need a summary. They need to know what to do next, by when, and what information should be protected.
 ```
 
-Show the trace. Point out the MCP calls: `deadline_calculator`, `policy_lookup`, `template_fetch`, `task_store`, and `safety_boundary_check`. The school notice becomes a medium-risk plan because the deadline is within seven days and it involves a student. The output redacts the student name, student ID, email, and phone number.
+### 0:25-0:55 - Solution Overview
 
-Next run:
+Show: README competition alignment table.
 
-```powershell
-python -m nextstep_agent.agent examples/sample_invoice.txt --current-date 2026-07-02 --json
+Narration:
+
+```text
+NextStep Agent handles that workflow with a traceable multi-agent pipeline. It extracts key facts, detects deadlines, checks risk, calls local MCP tools, builds a prioritized action plan, drafts a cautious response or checklist, verifies the draft against the source document, redacts sensitive information, and stores redacted tasks locally.
+
+This is organizational assistance only. It is not legal, medical, or financial advice.
 ```
 
-Show that the output is valid JSON matching `FinalResponse`. Highlight the invoice amount, due date, prioritized actions, verification pass, and saved task metadata.
+### 0:55-1:25 - Streamlit Landing View
 
-Then open the app:
+Show: Streamlit app landing page.
 
-```powershell
-streamlit run app.py
+Narration:
+
+```text
+The project has two demo surfaces. The CLI is best for reproducible traces and JSON output. The Streamlit app is best for a judge-friendly review. It supports pasted text, sample documents, text files, Markdown, text-based PDFs, and optional Gemini-backed image extraction.
+
+Gemini is optional. If no API key is configured, deterministic text extraction still works and the evaluation suite remains fully reproducible.
 ```
 
-Use the sample dropdown, run the school notice, and show each section in the UI.
+### 1:25-2:10 - School Notice Trace
 
-If showing document uploads, use a small text-based PDF generated from one of the examples. The app and CLI use `pypdf` for text-based PDFs and show an install message if the dependency is missing. For a screenshot or phone photo, use:
+Show terminal command:
 
 ```powershell
-python -m nextstep_agent.agent path/to/sample_notice.png --use-gemini --trace
+python -m nextstep_agent.agent demo_pack/demo_school_notice.txt --current-date 2026-07-02 --trace
 ```
 
-If `GOOGLE_API_KEY` is missing, the CLI and app show that image OCR requires Gemini.
+Narration:
 
-## 2:45-3:30 MCP, Security, Redaction, Verification
+```text
+Here is the school notice demo. The trace shows the named stages: Intake, Extraction, Risk and Priority, Resource Lookup, Action Planner, Drafting, Verification, and Redaction.
 
-The MCP server is not decorative. The action plan depends on MCP-backed tools for deadlines, local policy guidance, templates, task storage, and safety checks.
+The notice is transformed into typed facts, a deadline, risk assessment, and next steps. Because the permission form is due soon and involves a student, the risk is elevated. The final response includes a checklist and a safe draft while redacting the student name, student ID, and contact information.
+```
 
-Security is visible. Redaction covers email, phone, account-like numbers, 12 digit ID-like sequences, simple addresses, and labeled names. The verifier blocks unsupported claims such as saying a payment has already been made, giving legal advice, or giving medical advice. The draft stays organizational and source-grounded.
+### 2:10-2:45 - MCP Tool Calls
 
-## 3:30-4:15 Evals And Deployability
+Show: MCP calls in CLI trace or Streamlit MCP section.
 
-Run:
+Narration:
+
+```text
+MCP usage is real in this project. The pipeline calls a local MCP-style server for deadline calculation, policy lookup, template selection, task storage, and safety boundary checks.
+
+Those tool calls affect the output. The deadline tool normalizes dates, the resource tools supply local guidance and templates, the task tool stores redacted actions, and the safety check helps catch risky draft language.
+```
+
+### 2:45-3:15 - Invoice Structured Output
+
+Show terminal command:
+
+```powershell
+python -m nextstep_agent.agent demo_pack/demo_invoice.txt --current-date 2026-07-02 --json
+```
+
+Narration:
+
+```text
+The invoice demo shows the same pipeline as structured JSON. The output follows the FinalResponse schema, including extracted facts, risk, actions, draft, verification, redacted output, MCP metadata, and saved task information.
+
+This matters because the system is testable. It is not only a fluent answer in a chat window.
+```
+
+### 3:15-3:45 - Security And Redaction
+
+Show: Streamlit redaction and verification sections.
+
+Narration:
+
+```text
+Security is visible, not hidden. The redaction stage removes emails, phone numbers, account-like values, labeled identifiers, simple addresses, and labeled names. The verifier checks that the draft is grounded in the source and avoids unsupported legal, medical, financial, or payment-status claims.
+
+The saved task store is also redacted, and runtime task data is ignored by git.
+```
+
+### 3:45-4:15 - Evaluation Report
+
+Show terminal command and result:
 
 ```powershell
 python evals/run_evals.py
 ```
 
-The evaluation suite includes ten scenarios: school, invoice, utility, appointment, NGO intake, rental maintenance, internship, medical appointment, small business order, and scholarship or college fee circular. It checks document type, risk, action count, MCP tools, redaction behavior, and unsafe claims. The report is saved to `evals/eval_report.md`.
+Narration:
 
-Deployment is ready through Streamlit Community Cloud. The app runs without an API key, and Gemini is enabled by adding `GOOGLE_API_KEY` in Streamlit secrets.
+```text
+The deterministic evaluation suite covers ten scenarios: school notice, invoice, utility bill, appointment slip, NGO intake, rental maintenance, internship deadline, medical appointment reminder, small-business order request, and scholarship or college fee circular.
 
-## 4:15-4:45 Impact, Limitations, Closing
+The current release candidate passes 10 out of 10 scenarios with an 80 out of 80 deterministic score.
+```
 
-NextStep Agent is not a legal, medical, or financial advisor. It is a document-to-action concierge: it helps people organize confusing documents safely, avoid missed deadlines, and protect sensitive information.
+### 4:15-4:40 - Architecture Diagram
 
-Future work includes OCR benchmarks, richer multilingual support, durable hosted storage, and live ADK runner orchestration. The current project is intentionally scoped, testable, and demo-ready for the capstone.
+Show: `docs/architecture.md` diagram or README diagram.
+
+Narration:
+
+```text
+The architecture is intentionally scoped for a five-day capstone: document loader, typed schemas, named agents, local MCP tools, verification, redaction, task storage, CLI, Streamlit UI, and deterministic evals. It is ADK-aligned, but it still runs locally without requiring cloud setup.
+```
+
+### 4:40-5:00 - Closing Impact
+
+Show: README tagline or closing slide.
+
+Narration:
+
+```text
+NextStep Agent is built for a common, practical problem: turning confusing documents into clear next steps while protecting sensitive information. It is small enough to inspect, reliable enough to demo, and structured enough to extend after the capstone.
+```
+
+## Required Shots
+
+1. GitHub README top section.
+2. Streamlit app landing view.
+3. School notice run with trace.
+4. Invoice run with JSON output or Streamlit cards.
+5. MCP tool calls section.
+6. Redaction and security section.
+7. Eval report showing 10/10 and 80/80.
+8. Architecture diagram.
+9. Closing impact slide or README tagline.
+
+## Commands To Capture
+
+```powershell
+python -m nextstep_agent.agent demo_pack/demo_school_notice.txt --current-date 2026-07-02 --trace
+python -m nextstep_agent.agent demo_pack/demo_invoice.txt --current-date 2026-07-02 --json
+python evals/run_evals.py
+streamlit run app.py
+```
+
+## If Gemini Is Available
+
+Optional short add-on:
+
+```powershell
+python -m nextstep_agent.agent demo_pack/demo_school_notice.txt --current-date 2026-07-02 --use-gemini --trace
+```
+
+Say:
+
+```text
+Gemini is optional. With an API key, it can provide structured extraction and image understanding. Without a key, the deterministic text pipeline still works for local and judged demos.
+```
