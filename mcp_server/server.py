@@ -10,6 +10,7 @@ from typing import Any
 from dateutil import parser
 
 from nextstep_agent.redaction import find_sensitive_spans
+from nextstep_agent.task_store import persist_action_items
 
 try:
     from mcp.server.fastmcp import FastMCP
@@ -19,7 +20,6 @@ except Exception:
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = BASE_DIR / "data"
-TASK_STORE: list[dict[str, Any]] = []
 WEEKDAYS = {
     "monday": 0,
     "tuesday": 1,
@@ -183,24 +183,8 @@ def template_fetch(intent: str) -> dict[str, Any]:
     return fallback
 
 
-def task_store(action_items: list[dict[str, Any]]) -> dict[str, Any]:
-    stored: list[dict[str, Any]] = []
-    for item in action_items:
-        record = {
-            "id": str(item.get("id", f"T{len(TASK_STORE) + len(stored) + 1}")),
-            "title": str(item.get("title", "Untitled task")),
-            "due_date": item.get("due_date"),
-            "priority": item.get("priority"),
-            "status": item.get("status", "open"),
-        }
-        stored.append(record)
-
-    TASK_STORE.extend(stored)
-    return {
-        "stored_count": len(stored),
-        "total_count": len(TASK_STORE),
-        "tasks": stored,
-    }
+def task_store(action_items: list[dict[str, Any]], session_id: str | None = None) -> dict[str, Any]:
+    return persist_action_items(action_items=action_items, session_id=session_id)
 
 
 def safety_boundary_check(output: str) -> dict[str, Any]:

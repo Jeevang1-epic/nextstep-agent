@@ -7,7 +7,8 @@
       "deadline_contains": "July 8, 2026",
       "risk_level": "medium",
       "redaction_expected": true,
-      "min_action_items": 1
+      "min_action_items": 1,
+      "mcp_tools": ["deadline_calculator", "policy_lookup", "template_fetch", "task_store", "safety_boundary_check"]
     }
   },
   {
@@ -18,7 +19,8 @@
       "deadline_contains": "July 15, 2026",
       "risk_level": "medium",
       "redaction_expected": true,
-      "min_action_items": 2
+      "min_action_items": 2,
+      "mcp_tools": ["deadline_calculator", "policy_lookup", "template_fetch", "task_store", "safety_boundary_check"]
     }
   },
   {
@@ -29,18 +31,20 @@
       "deadline_contains": "July 5, 2026",
       "risk_level": "high",
       "redaction_expected": true,
-      "min_action_items": 2
+      "min_action_items": 2,
+      "mcp_tools": ["deadline_calculator", "policy_lookup", "template_fetch", "task_store", "safety_boundary_check"]
     }
   },
   {
     "id": "appointment_slip",
-    "document": "Community Clinic Appointment Slip\nPatient: Ravi Kumar\nAppointment scheduled for July 9, 2026 at 10:30 AM.\nPlease bring photo ID, insurance card, and arrive 15 minutes early.\nCall 555-710-9911 to reschedule.",
+    "document": "Community Center Appointment Slip\nName: Ravi Kumar\nAppointment scheduled for July 9, 2026 at 10:30 AM.\nPlease bring photo ID and arrive 15 minutes early.\nCall 555-710-9911 to reschedule.",
     "expected": {
       "document_type": "appointment_slip",
       "deadline_contains": "July 9, 2026",
       "risk_level": "medium",
       "redaction_expected": true,
-      "min_action_items": 2
+      "min_action_items": 2,
+      "mcp_tools": ["deadline_calculator", "policy_lookup", "template_fetch", "task_store", "safety_boundary_check"]
     }
   },
   {
@@ -51,7 +55,68 @@
       "deadline_contains": "within 5 business days",
       "risk_level": "medium",
       "redaction_expected": true,
-      "min_action_items": 2
+      "min_action_items": 2,
+      "mcp_tools": ["deadline_calculator", "policy_lookup", "template_fetch", "task_store", "safety_boundary_check"]
+    }
+  },
+  {
+    "id": "rental_maintenance_notice",
+    "document": "Rental Maintenance Notice\nTenant: Luis Park\nUnit: 4B\nThe landlord has scheduled maintenance for July 6, 2026 between 9 AM and 12 PM.\nPlease secure pets and confirm access instructions by July 4, 2026.",
+    "expected": {
+      "document_type": "rental_maintenance_notice",
+      "deadline_contains": "July 4, 2026",
+      "risk_level": "medium",
+      "redaction_expected": true,
+      "min_action_items": 2,
+      "mcp_tools": ["deadline_calculator", "policy_lookup", "template_fetch", "task_store", "safety_boundary_check"]
+    }
+  },
+  {
+    "id": "internship_application_deadline",
+    "document": "Internship Application Notice\nThe summer research internship application deadline is July 20, 2026.\nApplicants must submit a resume, cover letter, and transcript through the portal before the deadline.",
+    "expected": {
+      "document_type": "internship_deadline",
+      "deadline_contains": "July 20, 2026",
+      "risk_level": "low",
+      "redaction_expected": false,
+      "min_action_items": 2,
+      "mcp_tools": ["deadline_calculator", "policy_lookup", "template_fetch", "task_store", "safety_boundary_check"]
+    }
+  },
+  {
+    "id": "medical_appointment_reminder",
+    "document": "Medical Appointment Reminder\nPatient: Anika Shah\nMedical appointment scheduled for July 9, 2026 at 3:00 PM.\nPlease bring insurance card and medication list. Call 555-810-4411 to reschedule.",
+    "expected": {
+      "document_type": "medical_appointment",
+      "deadline_contains": "July 9, 2026",
+      "risk_level": "medium",
+      "redaction_expected": true,
+      "min_action_items": 2,
+      "mcp_tools": ["deadline_calculator", "policy_lookup", "template_fetch", "task_store", "safety_boundary_check"]
+    }
+  },
+  {
+    "id": "small_business_order_request",
+    "document": "Small Business Order Request\nCustomer: Green Cafe\nOrder request: 24 lunch boxes for delivery by July 7, 2026.\nPlease confirm quantity, delivery address, and quote before accepting the order.",
+    "expected": {
+      "document_type": "small_business_order",
+      "deadline_contains": "July 7, 2026",
+      "risk_level": "medium",
+      "redaction_expected": true,
+      "min_action_items": 2,
+      "mcp_tools": ["deadline_calculator", "policy_lookup", "template_fetch", "task_store", "safety_boundary_check"]
+    }
+  },
+  {
+    "id": "scholarship_fee_circular",
+    "document": "Scholarship and College Fee Circular\nStudent: Neha Jain\nStudent ID: COL-22451\nCollege fee balance: Rs. 12000\nScholarship documents and fee confirmation are due by July 10, 2026.",
+    "expected": {
+      "document_type": "scholarship_fee_circular",
+      "deadline_contains": "July 10, 2026",
+      "risk_level": "medium",
+      "redaction_expected": true,
+      "min_action_items": 2,
+      "mcp_tools": ["deadline_calculator", "policy_lookup", "template_fetch", "task_store", "safety_boundary_check"]
     }
   }
 ]

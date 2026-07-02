@@ -25,10 +25,40 @@
       "body_template": "Hello {sender},\n\nI reviewed the appointment notice. My next steps are:\n{actions}\n\nPlease confirm whether any documents, fees, or arrival instructions are required before {due_date}.\n\nThank you."
     },
     {
+      "intent": "medical_appointment_confirmation",
+      "aliases": ["medical_appointment"],
+      "subject": "Medical appointment preparation checklist",
+      "body_template": "Hello {sender},\n\nI reviewed the appointment reminder and noted these preparation steps:\n{actions}\n\nI will use this as an organization checklist only and will contact the provider for medical questions or changes.\n\nThank you."
+    },
+    {
       "intent": "intake_followup",
       "aliases": ["ngo_intake"],
       "subject": "Intake follow-up checklist",
       "body_template": "Hello {sender},\n\nI reviewed the intake instructions and noted these next steps:\n{actions}\n\nPlease confirm whether copies or originals are required and whether there is a safer way to submit sensitive documents.\n\nThank you."
+    },
+    {
+      "intent": "rental_maintenance_followup",
+      "aliases": ["rental_maintenance_notice"],
+      "subject": "Rental maintenance next steps",
+      "body_template": "Hello {sender},\n\nI reviewed the maintenance notice and identified these next steps:\n{actions}\n\nPlease confirm the appointment window, access instructions, and any tenant action required before {due_date}.\n\nThank you."
+    },
+    {
+      "intent": "internship_application_plan",
+      "aliases": ["internship_deadline"],
+      "subject": "Internship application checklist",
+      "body_template": "Hello {sender},\n\nI reviewed the internship notice and identified these next steps:\n{actions}\n\nI will confirm the deadline and required materials before submitting anything.\n\nThank you."
+    },
+    {
+      "intent": "small_business_order_response",
+      "aliases": ["small_business_order"],
+      "subject": "Order request checklist",
+      "body_template": "Hello {sender},\n\nI reviewed the order request and identified these next steps:\n{actions}\n\nI will verify quantity, delivery timing, and payment terms before confirming the order.\n\nThank you."
+    },
+    {
+      "intent": "scholarship_fee_plan",
+      "aliases": ["scholarship_fee_circular"],
+      "subject": "Scholarship or fee circular checklist",
+      "body_template": "Hello {sender},\n\nI reviewed the circular and identified these next steps:\n{actions}\n\nI will verify the fee amount, scholarship documents, and deadline before taking action.\n\nThank you."
     },
     {
       "intent": "general_checklist",

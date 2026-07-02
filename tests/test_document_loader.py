@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from nextstep_agent.document_loader import DocumentLoadError, load_document, load_document_input
+from nextstep_agent.document_loader import DocumentLoadError, load_document, load_document_input, load_document_payload
 
 
 def test_loads_txt_file(tmp_path: Path) -> None:
@@ -32,3 +32,17 @@ def test_unsupported_file_extension(tmp_path: Path) -> None:
 
     with pytest.raises(DocumentLoadError):
         load_document(document)
+
+
+def test_image_requires_explicit_image_mode(tmp_path: Path) -> None:
+    document = tmp_path / "notice.png"
+    document.write_bytes(b"tiny image placeholder")
+
+    with pytest.raises(DocumentLoadError, match="Image OCR requires Gemini"):
+        load_document(document)
+
+    payload = load_document_payload(document, allow_image=True)
+
+    assert payload.is_image is True
+    assert payload.source_path == document
+    assert payload.mime_type == "image/png"

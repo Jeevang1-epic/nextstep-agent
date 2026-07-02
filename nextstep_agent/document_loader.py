@@ -1,9 +1,20 @@
 from __future__ import annotations
 
+import mimetypes
+from dataclasses import dataclass
 from pathlib import Path
 
 
 SUPPORTED_TEXT_SUFFIXES = {".txt", ".md"}
+SUPPORTED_IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg"}
+
+
+@dataclass(frozen=True)
+class LoadedDocument:
+    text: str
+    source_path: Path | None = None
+    mime_type: str | None = None
+    is_image: bool = False
 
 
 class DocumentLoadError(ValueError):
@@ -11,6 +22,10 @@ class DocumentLoadError(ValueError):
 
 
 def load_document(path: str | Path) -> str:
+    return load_document_payload(path).text
+
+
+def load_document_payload(path: str | Path, allow_image: bool = False) -> LoadedDocument:
     document_path = Path(path)
     if not document_path.exists():
         raise DocumentLoadError(f"Document path does not exist: {document_path}")
@@ -19,11 +34,29 @@ def load_document(path: str | Path) -> str:
 
     suffix = document_path.suffix.lower()
     if suffix in SUPPORTED_TEXT_SUFFIXES:
-        return document_path.read_text(encoding="utf-8")
+        return LoadedDocument(
+            text=document_path.read_text(encoding="utf-8"),
+            source_path=document_path,
+            mime_type="text/markdown" if suffix == ".md" else "text/plain",
+        )
     if suffix == ".pdf":
-        return _load_pdf(document_path)
+        return LoadedDocument(
+            text=_load_pdf(document_path),
+            source_path=document_path,
+            mime_type="application/pdf",
+        )
+    if suffix in SUPPORTED_IMAGE_SUFFIXES:
+        if not allow_image:
+            raise DocumentLoadError("Image OCR requires Gemini. Re-run with --use-gemini and configure GOOGLE_API_KEY.")
+        return LoadedDocument(
+            text=f"Image document: {document_path.name}",
+            source_path=document_path,
+            mime_type=mimetypes.guess_type(document_path.name)[0] or "image/png",
+            is_image=True,
+        )
     raise DocumentLoadError(
-        f"Unsupported document type '{suffix}'. Supported file types are .txt, .md, and .pdf with pypdf installed."
+        "Unsupported document type "
+        f"'{suffix}'. Supported file types are .txt, .md, .pdf, .png, .jpg, and .jpeg."
     )
 
 
@@ -37,6 +70,22 @@ def load_document_input(path_or_text: str | None = None, direct_text: str | None
     if candidate.exists():
         return load_document(candidate)
     return path_or_text
+
+
+def load_document_input_payload(
+    path_or_text: str | None = None,
+    direct_text: str | None = None,
+    allow_image: bool = False,
+) -> LoadedDocument:
+    if direct_text and direct_text.strip():
+        return LoadedDocument(text=direct_text)
+    if not path_or_text:
+        raise DocumentLoadError("Provide a document path or direct text.")
+
+    candidate = Path(path_or_text)
+    if candidate.exists():
+        return load_document_payload(candidate, allow_image=allow_image)
+    return LoadedDocument(text=path_or_text)
 
 
 def _load_pdf(path: Path) -> str:

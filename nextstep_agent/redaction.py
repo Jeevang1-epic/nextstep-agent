@@ -63,7 +63,7 @@ PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "NAME",
         re.compile(
-            r"\b(?:student|customer|patient|parent|guardian|client|name)\s*:\s*"
+            r"\b(?:student|customer|patient|parent|guardian|client|tenant|name)\s*:\s*"
             r"[A-Z][A-Za-z.'-]+(?:[ \t]+[A-Z][A-Za-z.'-]+){0,3}",
             re.IGNORECASE,
         ),

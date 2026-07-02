@@ -1,47 +1,63 @@
 # Architecture
 
-NextStep Agent is organized as a staged multi-agent workflow. Each stage has a small responsibility and exchanges typed Pydantic data.
+NextStep Agent is a staged multi-agent workflow with typed handoffs, local MCP tools, optional Gemini extraction, persistent task storage, and visible safety controls.
 
 ```mermaid
 flowchart LR
-    A["Upload or pasted document"] --> B["Intake Agent"]
-    B --> C["Extraction Agent"]
-    C --> D{"Use Gemini?"}
-    D -->|Yes and key available| E["Gemini structured extraction"]
-    D -->|No or fallback| F["Deterministic extraction"]
-    E --> G["DocumentFacts"]
-    F --> G
-    G --> H["Risk & Priority Agent"]
-    H --> I["Resource Lookup Agent"]
-    I <--> J["Local MCP server"]
-    I --> K["Action Planner Agent"]
-    K --> L["Drafting Agent"]
-    L --> M["Verification Agent"]
-    M --> N["Redaction Agent"]
-    N --> O["FinalResponse"]
+    A["Text, PDF, image, or pasted document"] --> B["Document Loader"]
+    B --> C["Intake Agent"]
+    C --> D["Extraction Agent"]
+    D --> E{"Input and config"}
+    E -->|Text without Gemini| F["Deterministic extractor"]
+    E -->|Text with Gemini| G["Gemini structured extraction"]
+    E -->|Image with Gemini| H["Gemini multimodal extraction"]
+    F --> I["DocumentFacts"]
+    G --> I
+    H --> I
+    I --> J["Risk & Priority Agent"]
+    J --> K["Resource Lookup Agent"]
+    K <--> L["Local MCP server"]
+    K --> M["Action Planner Agent"]
+    M --> N["Drafting Agent"]
+    N --> O["Verification Agent"]
+    O --> P["Redaction Agent"]
+    P --> Q["FinalResponse"]
+    L --> R["Persistent JSONL task store"]
 ```
 
-## Agents
+## Agent Responsibilities
 
-`Intake Agent` normalizes input from pasted text, `.txt`, `.md`, or text-based `.pdf` documents.
+`Intake Agent` normalizes the document payload and records trace metadata.
 
-`Extraction Agent` creates `DocumentFacts` with either deterministic heuristics or optional Gemini structured output.
+`Extraction Agent` creates `DocumentFacts`. Text can use deterministic extraction or Gemini structured output. Image input requires Gemini because local OCR dependencies are intentionally out of scope.
 
-`Risk & Priority Agent` calls `deadline_calculator` and assigns low, medium, or high risk.
+`Risk & Priority Agent` calls `deadline_calculator`, checks urgency, and flags consequences such as payment, service interruption, student context, or scheduled appointments.
 
-`Resource Lookup Agent` calls MCP tools for local guidance and templates.
+`Resource Lookup Agent` calls `policy_lookup` and `template_fetch` to ground the plan in local guidance.
 
-`Action Planner Agent` converts source facts into prioritized `ActionItem` records.
+`Action Planner Agent` converts facts and risk into prioritized `ActionItem` records.
 
 `Drafting Agent` creates a cautious response and checklist.
 
-`Verification Agent` checks the plan and draft against source evidence and safety boundaries.
+`Verification Agent` checks evidence support and unsafe claims.
 
-`Redaction Agent` removes sensitive fields before presentation.
+`Redaction Agent` sanitizes final presentation.
+
+## MCP Tools
+
+The MCP server in `mcp_server/server.py` exposes:
+
+- `policy_lookup`
+- `template_fetch`
+- `deadline_calculator`
+- `task_store`
+- `safety_boundary_check`
+
+`task_store` persists redacted action records to `data/tasks.jsonl` with a run/session id. The runtime file is ignored by git.
 
 ## Data Contracts
 
-The core schemas are in `nextstep_agent/schemas.py`:
+The pipeline exchanges Pydantic models:
 
 - `DocumentFacts`
 - `RiskAssessment`
@@ -51,26 +67,34 @@ The core schemas are in `nextstep_agent/schemas.py`:
 - `VerificationReport`
 - `FinalResponse`
 
-`FinalResponse.metadata` stores the trace, extraction mode, MCP call details, and current date.
+`FinalResponse.metadata` includes:
 
-## MCP Server
+- Current date.
+- Session id.
+- Extraction mode.
+- Stage trace.
+- MCP call details.
+- Saved task count and task store path.
 
-`mcp_server/server.py` exposes a local MCP server over stdio:
+## Input Handling
 
-```powershell
-python -m mcp_server.server
-```
+`nextstep_agent/document_loader.py` supports:
 
-The deterministic CLI calls the same Python functions directly, while the MCP server remains available for ADK or MCP-compatible clients.
+- `.txt`
+- `.md`
+- text-based `.pdf` through `pypdf`
+- `.png`, `.jpg`, and `.jpeg` only when Gemini is enabled
 
-## Gemini Path
-
-`nextstep_agent/gemini_client.py` loads configuration from environment variables or `.env`, requests JSON structured output, validates it with Pydantic, and falls back to heuristics if the API key is missing, the SDK is unavailable, the request fails, or malformed JSON is returned.
-
-## Upload Path
-
-`nextstep_agent/document_loader.py` supports `.txt`, `.md`, and optional text-based `.pdf` extraction with `pypdf`. Image OCR remains a later-phase extension.
+If a PDF dependency is missing or image OCR is requested without Gemini, the CLI and app show clear messages.
 
 ## Security Boundary
 
-Source documents can contain sensitive fields, but final display passes through redaction and verification. The redaction layer covers contact details, account-like numbers, 12 digit ID-like sequences, addresses, labeled names, and common identifiers.
+Security is implemented as an active stage:
+
+- Redaction removes contact details, account-like numbers, 12 digit ID-like values, simple addresses, identifiers, and labeled names.
+- Verification rejects unsupported payment, legal, and medical claims.
+- The app warns users that the project provides organizational help only.
+
+## Deployment Shape
+
+The Streamlit app is the deployment target. It reads secrets from Streamlit secrets or local environment variables. Without `GOOGLE_API_KEY`, deterministic text extraction remains available.

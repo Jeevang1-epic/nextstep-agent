@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import logging
+import mimetypes
 import re
+from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
@@ -46,6 +48,18 @@ def _build_prompt(document_text: str, current_date: str) -> str:
         f"Current date: {current_date}\n\n"
         f"Schema:\n{schema}\n\n"
         f"Document:\n{document_text}"
+    )
+
+
+def _build_image_prompt(current_date: str) -> str:
+    schema = json.dumps(DocumentFacts.model_json_schema(), indent=2)
+    return (
+        "Read the uploaded document image and extract structured facts for the NextStep Agent workflow.\n"
+        "Return only valid JSON matching this Pydantic schema. Do not include markdown fences.\n"
+        "Redact sensitive personal identifiers in extracted contact, identifier, sender, and recipient fields.\n"
+        "If handwriting or image quality is unclear, include only facts that are legible.\n"
+        f"Current date: {current_date}\n\n"
+        f"Schema:\n{schema}"
     )
 
 
@@ -130,3 +144,51 @@ def extract_document_facts_with_gemini(document_text: str, current_date: str) ->
         return _fallback(document_text, f"Gemini returned malformed structured output: {exc}")
     except Exception as exc:
         return _fallback(document_text, f"Gemini request failed: {exc}")
+
+
+def extract_document_facts_from_image_with_gemini(
+    image_path: str | Path,
+    current_date: str,
+    mime_type: str | None = None,
+) -> DocumentFacts:
+    settings = get_settings()
+    if not settings.google_api_key:
+        raise RuntimeError("Image OCR requires Gemini. Configure GOOGLE_API_KEY and re-run with --use-gemini.")
+
+    try:
+        from google import genai
+        from google.genai import types
+    except Exception as exc:
+        raise RuntimeError(f"Image OCR requires google-genai. Install requirements.txt. Details: {exc}") from exc
+
+    path = Path(image_path)
+    image_bytes = path.read_bytes()
+    resolved_mime_type = mime_type or mimetypes.guess_type(path.name)[0] or "image/png"
+    prompt = _build_image_prompt(current_date)
+
+    try:
+        client = genai.Client(api_key=settings.google_api_key)
+        config = types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=DocumentFacts,
+            temperature=0,
+        )
+        image_part = types.Part.from_bytes(data=image_bytes, mime_type=resolved_mime_type)
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            contents=[prompt, image_part],
+            config=config,
+        )
+        facts = _validate_response(_response_text(response))
+        _set_metadata(
+            mode="gemini_image",
+            used=True,
+            fallback_reason=None,
+            model=settings.gemini_model,
+            image_path=str(path),
+        )
+        return facts
+    except (json.JSONDecodeError, ValidationError) as exc:
+        raise RuntimeError(f"Gemini returned malformed structured output for image: {exc}") from exc
+    except Exception as exc:
+        raise RuntimeError(f"Gemini image extraction failed: {exc}") from exc

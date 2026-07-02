@@ -35,6 +35,30 @@
       "title": "General document triage",
       "guidance": "Identify sender, deadline, requested action, consequence, contact channel, and any sensitive data before drafting a response.",
       "keywords": ["deadline", "action", "notice", "contact", "response"]
+    },
+    {
+      "category": "housing",
+      "title": "Rental maintenance notice handling",
+      "guidance": "Confirm maintenance date, access instructions, tenant responsibilities, and whether any personal identifiers can be avoided in messages.",
+      "keywords": ["rent", "lease", "maintenance", "landlord", "repair"]
+    },
+    {
+      "category": "career",
+      "title": "Internship application planning",
+      "guidance": "Track the deadline, required materials, submission channel, and confirmation steps. Do not invent submitted documents.",
+      "keywords": ["internship", "resume", "cover letter", "application", "deadline"]
+    },
+    {
+      "category": "business",
+      "title": "Small business order validation",
+      "guidance": "Verify quantity, delivery date, payment terms, and customer contact before confirming an order.",
+      "keywords": ["order", "quantity", "delivery", "quote", "business"]
+    },
+    {
+      "category": "education",
+      "title": "Scholarship and fee circular triage",
+      "guidance": "Check the fee amount, scholarship documents, submission channel, and due date before responding.",
+      "keywords": ["scholarship", "college", "fee", "tuition", "documents"]
     }
   ]
 }

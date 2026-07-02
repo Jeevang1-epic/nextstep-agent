@@ -17,8 +17,12 @@ from mcp_server.server import (
 
 from .prompts import AGENT_PROMPTS, ROOT_AGENT_INSTRUCTION
 from .redaction import find_sensitive_spans, redact_text, redact_value
-from .document_loader import load_document_input
-from .gemini_client import extract_document_facts_with_gemini, get_last_gemini_metadata
+from .document_loader import LoadedDocument, load_document_input_payload
+from .gemini_client import (
+    extract_document_facts_from_image_with_gemini,
+    extract_document_facts_with_gemini,
+    get_last_gemini_metadata,
+)
 from .schemas import (
     ActionItem,
     ActionPlan,
@@ -27,6 +31,7 @@ from .schemas import (
     FinalResponse,
     RiskAssessment,
 )
+from .task_store import new_session_id
 from .verifier import verify_plan_against_source
 
 try:
@@ -75,6 +80,20 @@ ACTION_KEYWORDS = (
     "sign",
     "rsvp",
     "disconnect",
+    "repair",
+    "maintenance",
+    "apply",
+    "application",
+    "resume",
+    "cover letter",
+    "deliver",
+    "quote",
+    "order",
+    "documents",
+    "proof",
+    "fee",
+    "scholarship",
+    "confirm",
 )
 
 
@@ -115,15 +134,29 @@ def _clean_lines(document_text: str) -> list[str]:
     return [line.strip() for line in document_text.replace("\r\n", "\n").split("\n") if line.strip()]
 
 
+def _has_any(text: str, patterns: tuple[str, ...]) -> bool:
+    return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
+
+
 def _detect_document_type(text: str) -> str:
     lower = text.lower()
+    if _has_any(lower, (r"\bscholarship\b", r"\bcollege fee\b", r"\btuition\b", r"\bfee circular\b")):
+        return "scholarship_fee_circular"
     if any(term in lower for term in ("school", "student", "permission slip", "field trip")):
         return "school_notice"
     if any(term in lower for term in ("utility", "electric", "water bill", "disconnect", "service interruption")):
         return "utility_bill"
     if "invoice" in lower or "amount due" in lower:
         return "invoice"
-    if any(term in lower for term in ("appointment", "clinic", "doctor", "visit")):
+    if _has_any(lower, (r"\brent(?:al)?\b", r"\blease\b", r"\blandlord\b", r"\bmaintenance\b", r"\brepair request\b")):
+        return "rental_maintenance_notice"
+    if _has_any(lower, (r"\binternship\b", r"\bapplication deadline\b", r"\bresume\b", r"\bcover letter\b")):
+        return "internship_deadline"
+    if _has_any(lower, (r"\bmedical appointment\b", r"\bclinic\b", r"\bdoctor\b", r"\bpatient\b", r"\bvisit\b")):
+        return "medical_appointment"
+    if _has_any(lower, (r"\bpurchase order\b", r"\border request\b", r"\bquote\b", r"\bsmall business\b", r"\bdeliver(?:y)?\b")):
+        return "small_business_order"
+    if any(term in lower for term in ("appointment", "visit")):
         return "appointment_slip"
     if any(term in lower for term in ("intake", "case worker", "ngo", "nonprofit")):
         return "ngo_intake"
@@ -221,13 +254,19 @@ def risk_priority_agent(facts: DocumentFacts, current_date: str) -> tuple[RiskAs
         flags.append("service_or_financial_consequence")
     if facts.document_type == "school_notice":
         flags.append("minor_or_school_context")
+    if facts.document_type in {"medical_appointment", "appointment_slip"} and (facts.deadlines or facts.dates):
+        flags.append("appointment_scheduled")
     if facts.amounts:
         flags.append("payment_or_amount_detected")
 
     unique_flags = sorted(set(flags))
     if "deadline_overdue" in unique_flags or "service_or_financial_consequence" in unique_flags:
         level = "high"
-    elif "deadline_within_7_days" in unique_flags or "payment_or_amount_detected" in unique_flags:
+    elif (
+        "deadline_within_7_days" in unique_flags
+        or "payment_or_amount_detected" in unique_flags
+        or "appointment_scheduled" in unique_flags
+    ):
         level = "medium"
     else:
         level = "low"
@@ -251,7 +290,12 @@ def _intent_for_document_type(document_type: str) -> str:
         "invoice": "invoice_payment_check",
         "utility_bill": "utility_bill_response",
         "appointment_slip": "appointment_confirmation",
+        "medical_appointment": "medical_appointment_confirmation",
         "ngo_intake": "intake_followup",
+        "rental_maintenance_notice": "rental_maintenance_followup",
+        "internship_deadline": "internship_application_plan",
+        "small_business_order": "small_business_order_response",
+        "scholarship_fee_circular": "scholarship_fee_plan",
     }.get(document_type, "general_checklist")
 
 
@@ -261,7 +305,12 @@ def resource_lookup_agent(facts: DocumentFacts) -> tuple[dict[str, Any], dict[st
         "invoice": "billing",
         "utility_bill": "utility",
         "appointment_slip": "appointment",
+        "medical_appointment": "appointment",
         "ngo_intake": "intake",
+        "rental_maintenance_notice": "housing",
+        "internship_deadline": "career",
+        "small_business_order": "business",
+        "scholarship_fee_circular": "education",
     }.get(facts.document_type, "general")
     query = " ".join([facts.document_type, *facts.required_actions, *facts.deadlines])
     policy = policy_lookup(query=query, category=category)
@@ -358,7 +407,13 @@ def drafting_agent(facts: DocumentFacts, plan: ActionPlan, template: dict[str, A
     )
 
 
-def redaction_agent(facts: DocumentFacts, plan: ActionPlan, draft: DraftOutput, verification_passed: bool) -> str:
+def redaction_agent(
+    facts: DocumentFacts,
+    plan: ActionPlan,
+    draft: DraftOutput,
+    verification_passed: bool,
+    task_result: dict[str, Any] | None = None,
+) -> str:
     lines = [
         "NextStep summary",
         f"Document type: {facts.document_type}",
@@ -370,6 +425,14 @@ def redaction_agent(facts: DocumentFacts, plan: ActionPlan, draft: DraftOutput, 
     for item in plan.action_items:
         due = f" due {item.due_date.isoformat()}" if item.due_date else ""
         lines.append(f"- P{item.priority}: {item.title}{due}")
+    if task_result:
+        lines.extend(
+            [
+                "",
+                f"Saved tasks: {task_result.get('stored_count', 0)}",
+                f"Task store: {task_result.get('task_store_path', 'not available')}",
+            ]
+        )
     lines.extend(["", "Draft:", draft.body])
     return redact_text("\n".join(lines)).text
 
@@ -386,15 +449,27 @@ def _mcp_call(tool: str, why: str, result: Any) -> dict[str, Any]:
     return {"tool": tool, "why": why, "result": result}
 
 
-def run_pipeline(document_text: str, current_date: str | None = None, use_gemini: bool = False) -> FinalResponse:
+def run_pipeline(
+    document_text: str,
+    current_date: str | None = None,
+    use_gemini: bool = False,
+    image_path: str | None = None,
+    image_mime_type: str | None = None,
+) -> FinalResponse:
     run_date = current_date or date.today().isoformat()
+    session_id = new_session_id()
     trace_events: list[dict[str, str]] = []
     mcp_calls: list[dict[str, Any]] = []
 
     source_text = intake_agent(document_text)
     trace_events.append(_trace("Intake Agent", "Normalized document text and confirmed non-empty input."))
 
-    if use_gemini:
+    if image_path:
+        if not use_gemini:
+            raise ValueError("Image OCR requires --use-gemini and GOOGLE_API_KEY.")
+        facts = extract_document_facts_from_image_with_gemini(image_path, run_date, image_mime_type)
+        extraction_metadata = get_last_gemini_metadata()
+    elif use_gemini:
         facts = extract_document_facts_with_gemini(source_text, run_date)
         extraction_metadata = get_last_gemini_metadata()
     else:
@@ -444,7 +519,7 @@ def run_pipeline(document_text: str, current_date: str | None = None, use_gemini
     verification = verify_plan_against_source(source_text, plan, draft)
     trace_events.append(_trace("Verification Agent", f"Verification {'passed' if verification.passed else 'failed'} with score {verification.source_alignment_score}."))
 
-    task_result = task_store([item.model_dump(mode="json") for item in plan.action_items])
+    task_result = task_store([item.model_dump(mode="json") for item in plan.action_items], session_id=session_id)
     safety_result = safety_boundary_check(draft.body)
     mcp_calls.append(
         _mcp_call(
@@ -464,7 +539,7 @@ def run_pipeline(document_text: str, current_date: str | None = None, use_gemini
     safe_facts = _sanitize_model(facts, DocumentFacts)
     safe_plan = _sanitize_model(plan, ActionPlan)
     safe_draft = _sanitize_model(draft, DraftOutput)
-    redacted_output = redaction_agent(safe_facts, safe_plan, safe_draft, verification.passed)
+    redacted_output = redaction_agent(safe_facts, safe_plan, safe_draft, verification.passed, task_result)
     trace_events.append(_trace("Redaction Agent", "Sanitized sensitive fields before final presentation."))
 
     mcp_trace = [
@@ -484,16 +559,18 @@ def run_pipeline(document_text: str, current_date: str | None = None, use_gemini
         mcp_trace=mcp_trace,
         metadata={
             "current_date": run_date,
+            "session_id": session_id,
             "extraction": extraction_metadata,
             "trace": trace_events,
             "mcp_calls": mcp_calls,
+            "saved_tasks": task_result,
             "agent_count": len(AGENT_PROMPTS),
         },
     )
 
 
-def _load_document_from_args(args: argparse.Namespace) -> str:
-    return load_document_input(args.path, args.text)
+def _load_document_from_args(args: argparse.Namespace) -> LoadedDocument:
+    return load_document_input_payload(args.path, args.text, allow_image=args.use_gemini)
 
 
 def format_trace(result: FinalResponse) -> str:
@@ -518,14 +595,23 @@ def main() -> None:
     parser.add_argument("--trace", action="store_true", help="Print a stage-by-stage agent and MCP trace.")
     args = parser.parse_args()
 
-    document_text = _load_document_from_args(args)
-    result = run_pipeline(document_text, current_date=args.current_date, use_gemini=args.use_gemini)
-    indent = None if args.compact else 2
+    try:
+        document = _load_document_from_args(args)
+        result = run_pipeline(
+            document.text,
+            current_date=args.current_date,
+            use_gemini=args.use_gemini,
+            image_path=str(document.source_path) if document.is_image and document.source_path else None,
+            image_mime_type=document.mime_type,
+        )
+        indent = None if args.compact else 2
 
-    if args.trace and not args.json and not args.compact:
-        print(format_trace(result))
-        print()
-    print(json.dumps(result.model_dump(mode="json"), indent=indent))
+        if args.trace and not args.json and not args.compact:
+            print(format_trace(result))
+            print()
+        print(json.dumps(result.model_dump(mode="json"), indent=indent))
+    except Exception as exc:
+        raise SystemExit(f"NextStep Agent error: {exc}") from None
 
 
 if __name__ == "__main__":

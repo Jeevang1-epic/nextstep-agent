@@ -1,6 +1,6 @@
 # Evaluation
 
-Prompt 1.1 adds fixture-based evaluation in `evals/cases.json` and `evals/run_evals.py`.
+NextStep Agent uses deterministic fixture evaluations plus unit tests. The goal is not to claim production accuracy. The goal is to prove the pipeline is structured, source-grounded, safe, and repeatable.
 
 ## Run
 
@@ -8,24 +8,43 @@ Prompt 1.1 adds fixture-based evaluation in `evals/cases.json` and `evals/run_ev
 python evals/run_evals.py
 ```
 
-## Coverage
+The runner prints a console table and writes `evals/eval_report.md`.
 
-The current fixture set covers:
+## Current Fixture Coverage
 
-- School notice with deadline and student redaction.
-- Invoice with payment due date and amount.
-- Utility bill with service interruption risk.
-- Appointment slip with preparation actions.
-- NGO intake form with sensitive support documents.
+The suite contains ten scenarios:
+
+1. School notice with a student deadline.
+2. Invoice with amount and payment due date.
+3. Utility bill with service interruption risk.
+4. Appointment slip with preparation actions.
+5. NGO intake or beneficiary support form.
+6. Rental or maintenance notice.
+7. Internship application deadline.
+8. Medical appointment reminder without medical advice.
+9. Small business order request.
+10. Scholarship or college fee circular.
 
 Each case checks:
 
-- Expected `document_type`.
-- At least one deadline or expected deadline phrase.
-- Expected risk level.
-- Whether redaction is expected.
+- Expected document type or category.
 - Minimum action item count.
-- Verification pass/fail.
+- Expected risk level.
+- Required MCP tools called.
+- Expected redaction behavior.
+- Verification pass.
+- No hallucinated payment, legal, or medical claims.
+
+## Current Result
+
+Latest deterministic run:
+
+- Total cases: 10.
+- Passed cases: 10.
+- Failed cases: 0.
+- Score: 80/80.
+
+See `evals/eval_report.md` and `docs/demo_outputs/eval_report.md` for the generated report.
 
 ## Unit Tests
 
@@ -37,19 +56,14 @@ Tests cover:
 
 - Redaction patterns.
 - Deadline parsing.
-- Document loading.
-- Pipeline JSON/trace metadata.
-- Evaluation fixture pass/fail behavior.
+- Text, Markdown, PDF, and image input gatekeeping.
+- Pipeline trace and task persistence metadata.
+- Persistent JSONL task storage.
+- Evaluation fixture behavior.
 
-## Current Limitations
+## Known Limits
 
-- Eval fixtures are deterministic text cases, not a broad benchmark.
-- Gemini output quality is not scored separately yet.
-- OCR and scanned document cases are intentionally deferred.
-
-## Prompt 1.2 Evaluation Ideas
-
-- Add golden JSON snapshots for every case.
-- Add Gemini-vs-heuristic comparison metrics.
-- Add OCR fixtures once image input is implemented.
-- Add rubric scoring for action usefulness and draft quality.
+- The fixture suite is deterministic and intentionally small.
+- Gemini live extraction quality is not scored automatically yet.
+- OCR is delegated to Gemini image input rather than local OCR dependencies.
+- The current task store is local JSONL, suitable for demos but not a multi-user hosted database.

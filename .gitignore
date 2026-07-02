@@ -1,4 +1,5 @@
 .env
+.streamlit/secrets.toml
 .venv/
 venv/
 __pycache__/
@@ -13,3 +14,4 @@ dist/
 build/
 *.egg-info/
 .nextstep_tasks.json
+data/tasks.jsonl
