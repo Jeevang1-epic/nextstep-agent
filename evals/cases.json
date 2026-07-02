@@ -1,0 +1,57 @@
+[
+  {
+    "id": "school_notice_deadline",
+    "document": "Lakeview School Notice\nStudent: Asha Rao\nStudent ID: STU-2026-778\nPlease return the signed field trip permission slip and $20 fee by July 8, 2026.\nQuestions: office@lakeview.example",
+    "expected": {
+      "document_type": "school_notice",
+      "deadline_contains": "July 8, 2026",
+      "risk_level": "medium",
+      "redaction_expected": true,
+      "min_action_items": 1
+    }
+  },
+  {
+    "id": "invoice_payment_due",
+    "document": "Invoice No: INV-90012\nFrom: Delta Print Shop\nTo: North Market LLC\nAmount due: $510.00\nPayment due by July 15, 2026.\nPlease verify the invoice and pay before the due date.",
+    "expected": {
+      "document_type": "invoice",
+      "deadline_contains": "July 15, 2026",
+      "risk_level": "medium",
+      "redaction_expected": true,
+      "min_action_items": 2
+    }
+  },
+  {
+    "id": "utility_bill_interruption",
+    "document": "Metro Water Utility Notice\nCustomer: Nina Shah\nAccount Number: 4488-3322-1100\nPast due balance: $88.20\nPayment must be received by July 5, 2026 to avoid service interruption.\nCall 555-301-2222 within 3 business days for assistance.",
+    "expected": {
+      "document_type": "utility_bill",
+      "deadline_contains": "July 5, 2026",
+      "risk_level": "high",
+      "redaction_expected": true,
+      "min_action_items": 2
+    }
+  },
+  {
+    "id": "appointment_slip",
+    "document": "Community Clinic Appointment Slip\nPatient: Ravi Kumar\nAppointment scheduled for July 9, 2026 at 10:30 AM.\nPlease bring photo ID, insurance card, and arrive 15 minutes early.\nCall 555-710-9911 to reschedule.",
+    "expected": {
+      "document_type": "appointment_slip",
+      "deadline_contains": "July 9, 2026",
+      "risk_level": "medium",
+      "redaction_expected": true,
+      "min_action_items": 2
+    }
+  },
+  {
+    "id": "ngo_intake_support",
+    "document": "NGO Intake Follow-up\nClient: Meera Das\nCase ID: NGO-44591\nPlease submit income proof, address proof, and benefit form within 5 business days.\nDo not email identity documents unless the case worker confirms a secure upload link.",
+    "expected": {
+      "document_type": "ngo_intake",
+      "deadline_contains": "within 5 business days",
+      "risk_level": "medium",
+      "redaction_expected": true,
+      "min_action_items": 2
+    }
+  }
+]

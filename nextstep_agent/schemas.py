@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -78,3 +78,4 @@ class FinalResponse(BaseSchema):
     verification: VerificationReport
     redacted_output: str
     mcp_trace: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)

@@ -33,7 +33,15 @@ PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
     (
         "PHONE",
-        re.compile(r"(?<!\w)(?:\+?1[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}(?!\w)"),
+        re.compile(r"(?<!\w)(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}(?!\w)"),
+    ),
+    (
+        "ID_12_DIGIT",
+        re.compile(r"\b\d{4}[ -]?\d{4}[ -]?\d{4}\b"),
+    ),
+    (
+        "LONG_NUMBER",
+        re.compile(r"\b(?:\d[ -]?){11,18}\d?\b"),
     ),
     (
         "IDENTIFIER",
@@ -46,7 +54,9 @@ PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "ADDRESS",
         re.compile(
-            r"\b\d{1,5}\s+[A-Za-z0-9 .'-]+(?:Street|St\.|Road|Rd\.|Avenue|Ave\.|Lane|Ln\.|Drive|Dr\.)\b",
+            r"\b\d{1,5}\s+[A-Za-z0-9 .'-]+"
+            r"(?:Street|St\.|Road|Rd\.|Avenue|Ave\.|Lane|Ln\.|Drive|Dr\.|Boulevard|Blvd\.|Court|Ct\.|Circle|Cir\.)"
+            r"(?:\s+(?:Apt|Unit|Suite|Ste)\.?\s*[A-Za-z0-9-]+)?\b",
             re.IGNORECASE,
         ),
     ),

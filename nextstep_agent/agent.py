@@ -5,7 +5,6 @@ import json
 import re
 from dataclasses import dataclass
 from datetime import date
-from pathlib import Path
 from typing import Any
 
 from mcp_server.server import (
@@ -18,6 +17,8 @@ from mcp_server.server import (
 
 from .prompts import AGENT_PROMPTS, ROOT_AGENT_INSTRUCTION
 from .redaction import find_sensitive_spans, redact_text, redact_value
+from .document_loader import load_document_input
+from .gemini_client import extract_document_facts_with_gemini, get_last_gemini_metadata
 from .schemas import (
     ActionItem,
     ActionPlan,
@@ -175,8 +176,13 @@ def extraction_agent(document_text: str) -> DocumentFacts:
     lines = _clean_lines(document_text)
     dates = [match.group(0) for match in DATE_PATTERN.finditer(document_text)]
     amounts = [match.group(0) for match in AMOUNT_PATTERN.finditer(document_text)]
-    identifiers = [redact_text(match.group(0)).text for match in IDENTIFIER_PATTERN.finditer(document_text)]
-    contacts = [redact_text(match.group(0)).text for match in CONTACT_PATTERN.finditer(document_text)]
+    identifier_matches = list(IDENTIFIER_PATTERN.finditer(document_text))
+    identifiers = [redact_text(match.group(0)).text for match in identifier_matches]
+    contacts = [
+        redact_text(match.group(0)).text
+        for match in CONTACT_PATTERN.finditer(document_text)
+        if not any(match.start() >= identifier.start() and match.end() <= identifier.end() for identifier in identifier_matches)
+    ]
     sensitive_fields = sorted({finding.label for finding in find_sensitive_spans(document_text)})
 
     return DocumentFacts(
@@ -372,22 +378,95 @@ def _sanitize_model(model: Any, schema: type[Any]) -> Any:
     return schema.model_validate(redact_value(model.model_dump(mode="json")))
 
 
-def run_pipeline(document_text: str, current_date: str | None = None) -> FinalResponse:
+def _trace(stage: str, detail: str) -> dict[str, str]:
+    return {"stage": stage, "detail": detail}
+
+
+def _mcp_call(tool: str, why: str, result: Any) -> dict[str, Any]:
+    return {"tool": tool, "why": why, "result": result}
+
+
+def run_pipeline(document_text: str, current_date: str | None = None, use_gemini: bool = False) -> FinalResponse:
     run_date = current_date or date.today().isoformat()
+    trace_events: list[dict[str, str]] = []
+    mcp_calls: list[dict[str, Any]] = []
+
     source_text = intake_agent(document_text)
-    facts = extraction_agent(source_text)
+    trace_events.append(_trace("Intake Agent", "Normalized document text and confirmed non-empty input."))
+
+    if use_gemini:
+        facts = extract_document_facts_with_gemini(source_text, run_date)
+        extraction_metadata = get_last_gemini_metadata()
+    else:
+        facts = extraction_agent(source_text)
+        extraction_metadata = {"mode": "heuristic", "used": False, "fallback_reason": None}
+    trace_events.append(
+        _trace(
+            "Extraction Agent",
+            f"Extracted facts using {extraction_metadata.get('mode', 'unknown')} mode.",
+        )
+    )
+
     risk, deadline_results, risk_trace = risk_priority_agent(facts, run_date)
+    for deadline_text, result in zip(facts.deadlines or facts.dates, deadline_results):
+        mcp_calls.append(
+            _mcp_call(
+                "deadline_calculator",
+                "Normalize deadline text and compute urgency against the current date.",
+                {"input": deadline_text, **result},
+            )
+        )
+    trace_events.append(_trace("Risk & Priority Agent", f"Assigned {risk.level} risk with flags: {', '.join(risk.flags) or 'none'}."))
+
     policy, template, lookup_trace = resource_lookup_agent(facts)
+    mcp_calls.append(
+        _mcp_call(
+            "policy_lookup",
+            "Find local guidance relevant to the document category and extracted actions.",
+            {"matches": [match["title"] for match in policy.get("matches", [])]},
+        )
+    )
+    mcp_calls.append(
+        _mcp_call(
+            "template_fetch",
+            "Fetch a safe response template for the detected user intent.",
+            {"intent": template["intent"], "subject": template["subject"]},
+        )
+    )
+    trace_events.append(_trace("Resource Lookup Agent", "Called MCP policy and template tools for grounded local context."))
+
     plan = action_planner_agent(facts, risk, policy, deadline_results, run_date)
+    trace_events.append(_trace("Action Planner Agent", f"Created {len(plan.action_items)} prioritized action item(s)."))
+
     draft = drafting_agent(facts, plan, template, run_date)
+    trace_events.append(_trace("Drafting Agent", f"Drafted a {draft.intent} response and checklist."))
+
     verification = verify_plan_against_source(source_text, plan, draft)
+    trace_events.append(_trace("Verification Agent", f"Verification {'passed' if verification.passed else 'failed'} with score {verification.source_alignment_score}."))
+
     task_result = task_store([item.model_dump(mode="json") for item in plan.action_items])
     safety_result = safety_boundary_check(draft.body)
+    mcp_calls.append(
+        _mcp_call(
+            "task_store",
+            "Store the planned actions in the local task sink for demo continuity.",
+            task_result,
+        )
+    )
+    mcp_calls.append(
+        _mcp_call(
+            "safety_boundary_check",
+            "Check the draft for unsafe claims or unredacted sensitive information.",
+            safety_result,
+        )
+    )
 
     safe_facts = _sanitize_model(facts, DocumentFacts)
     safe_plan = _sanitize_model(plan, ActionPlan)
     safe_draft = _sanitize_model(draft, DraftOutput)
     redacted_output = redaction_agent(safe_facts, safe_plan, safe_draft, verification.passed)
+    trace_events.append(_trace("Redaction Agent", "Sanitized sensitive fields before final presentation."))
+
     mcp_trace = [
         *risk_trace,
         *lookup_trace,
@@ -403,28 +482,49 @@ def run_pipeline(document_text: str, current_date: str | None = None) -> FinalRe
         verification=verification,
         redacted_output=redacted_output,
         mcp_trace=mcp_trace,
+        metadata={
+            "current_date": run_date,
+            "extraction": extraction_metadata,
+            "trace": trace_events,
+            "mcp_calls": mcp_calls,
+            "agent_count": len(AGENT_PROMPTS),
+        },
     )
 
 
 def _load_document_from_args(args: argparse.Namespace) -> str:
-    if args.text:
-        return args.text
-    if not args.path:
-        raise ValueError("Provide a document path or --text.")
-    return Path(args.path).read_text(encoding="utf-8")
+    return load_document_input(args.path, args.text)
+
+
+def format_trace(result: FinalResponse) -> str:
+    lines = ["Agent trace:"]
+    for event in result.metadata.get("trace", []):
+        lines.append(f"- {event.get('stage')}: {event.get('detail')}")
+    lines.append("")
+    lines.append("MCP tool calls:")
+    for call in result.metadata.get("mcp_calls", []):
+        lines.append(f"- {call.get('tool')}: {call.get('why')}")
+    return "\n".join(lines)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run the NextStep Agent Phase 1 pipeline.")
+    parser = argparse.ArgumentParser(description="Run the NextStep Agent pipeline.")
     parser.add_argument("path", nargs="?", help="Path to a text document.")
     parser.add_argument("--text", help="Document text to process.")
     parser.add_argument("--current-date", help="ISO date used for deadline calculations.")
+    parser.add_argument("--use-gemini", action="store_true", help="Use Gemini extraction when GOOGLE_API_KEY is available.")
     parser.add_argument("--compact", action="store_true", help="Print compact JSON.")
+    parser.add_argument("--json", action="store_true", help="Emit valid JSON output.")
+    parser.add_argument("--trace", action="store_true", help="Print a stage-by-stage agent and MCP trace.")
     args = parser.parse_args()
 
     document_text = _load_document_from_args(args)
-    result = run_pipeline(document_text, current_date=args.current_date)
+    result = run_pipeline(document_text, current_date=args.current_date, use_gemini=args.use_gemini)
     indent = None if args.compact else 2
+
+    if args.trace and not args.json and not args.compact:
+        print(format_trace(result))
+        print()
     print(json.dumps(result.model_dump(mode="json"), indent=indent))
 
 

@@ -1,55 +1,47 @@
 # Architecture
 
-NextStep Agent uses a staged multi-agent workflow. Phase 1 runs deterministically from the CLI, while preserving the boundaries needed to move each stage into Google ADK agents.
+NextStep Agent is organized as a staged multi-agent workflow. Each stage has a small responsibility and exchanges typed Pydantic data.
 
 ```mermaid
 flowchart LR
-    A["User document"] --> B["Intake Agent"]
+    A["Upload or pasted document"] --> B["Intake Agent"]
     B --> C["Extraction Agent"]
-    C --> D["Risk & Priority Agent"]
-    D --> E["Resource Lookup Agent"]
-    E --> F["Action Planner Agent"]
-    F --> G["Drafting Agent"]
-    G --> H["Verification Agent"]
-    H --> I["Redaction Agent"]
-    I --> J["FinalResponse"]
-    E <--> K["Local MCP server"]
-    D <--> K
-    F <--> K
-    G <--> K
+    C --> D{"Use Gemini?"}
+    D -->|Yes and key available| E["Gemini structured extraction"]
+    D -->|No or fallback| F["Deterministic extraction"]
+    E --> G["DocumentFacts"]
+    F --> G
+    G --> H["Risk & Priority Agent"]
+    H --> I["Resource Lookup Agent"]
+    I <--> J["Local MCP server"]
+    I --> K["Action Planner Agent"]
+    K --> L["Drafting Agent"]
+    L --> M["Verification Agent"]
+    M --> N["Redaction Agent"]
+    N --> O["FinalResponse"]
 ```
 
-## Agent Responsibilities
+## Agents
 
-`Intake Agent` normalizes uploaded or pasted document text and prepares it for extraction.
+`Intake Agent` normalizes input from pasted text, `.txt`, `.md`, or text-based `.pdf` documents.
 
-`Extraction Agent` identifies document type, sender, recipient, dates, deadlines, amounts, identifiers, required actions, contact methods, and sensitive fields.
+`Extraction Agent` creates `DocumentFacts` with either deterministic heuristics or optional Gemini structured output.
 
-`Risk & Priority Agent` detects urgency, missed deadlines, financial or service interruption risk, school or minor context, and human review requirements.
+`Risk & Priority Agent` calls `deadline_calculator` and assigns low, medium, or high risk.
 
-`Resource Lookup Agent` calls the MCP server for relevant policy notes and response templates.
+`Resource Lookup Agent` calls MCP tools for local guidance and templates.
 
-`Action Planner Agent` converts facts and risk into prioritized `ActionItem` records.
+`Action Planner Agent` converts source facts into prioritized `ActionItem` records.
 
-`Drafting Agent` creates a safe response and checklist grounded in the source document and selected template.
+`Drafting Agent` creates a cautious response and checklist.
 
-`Verification Agent` checks whether the plan and draft stay aligned with source evidence.
+`Verification Agent` checks the plan and draft against source evidence and safety boundaries.
 
-`Redaction Agent` removes sensitive fields before presenting user-facing output.
-
-## MCP Server
-
-The local MCP server lives in `mcp_server/server.py`. It exposes real callable tools and can run over stdio with:
-
-```powershell
-python -m mcp_server.server
-```
-
-The CLI calls the same functions directly so the Phase 1 demo works even when no ADK runner is configured.
+`Redaction Agent` removes sensitive fields before presentation.
 
 ## Data Contracts
 
-The Pydantic schemas in `nextstep_agent/schemas.py` define the public data model:
+The core schemas are in `nextstep_agent/schemas.py`:
 
 - `DocumentFacts`
 - `RiskAssessment`
@@ -59,12 +51,26 @@ The Pydantic schemas in `nextstep_agent/schemas.py` define the public data model
 - `VerificationReport`
 - `FinalResponse`
 
-These schemas keep agent handoffs explicit and testable.
+`FinalResponse.metadata` stores the trace, extraction mode, MCP call details, and current date.
+
+## MCP Server
+
+`mcp_server/server.py` exposes a local MCP server over stdio:
+
+```powershell
+python -m mcp_server.server
+```
+
+The deterministic CLI calls the same Python functions directly, while the MCP server remains available for ADK or MCP-compatible clients.
+
+## Gemini Path
+
+`nextstep_agent/gemini_client.py` loads configuration from environment variables or `.env`, requests JSON structured output, validates it with Pydantic, and falls back to heuristics if the API key is missing, the SDK is unavailable, the request fails, or malformed JSON is returned.
+
+## Upload Path
+
+`nextstep_agent/document_loader.py` supports `.txt`, `.md`, and optional text-based `.pdf` extraction with `pypdf`. Image OCR remains a later-phase extension.
 
 ## Security Boundary
 
-The project treats redaction and verification as required stages, not display-only features. Source text can contain sensitive fields, but final CLI output is passed through the redaction layer. The MCP `safety_boundary_check` also detects sensitive content and unsafe wording before final presentation.
-
-## Future Phase Hooks
-
-Later phases can replace deterministic functions with model-backed ADK agents, add OCR or multimodal input, persist tasks to a database, and add a larger evaluation set without changing the core handoff schemas.
+Source documents can contain sensitive fields, but final display passes through redaction and verification. The redaction layer covers contact details, account-like numbers, 12 digit ID-like sequences, addresses, labeled names, and common identifiers.

@@ -30,3 +30,22 @@ def test_redaction_preserves_amounts() -> None:
     assert "$342.50" in result.text
     assert "July 12, 2026" in result.text
     assert result.findings == []
+
+
+def test_redacts_long_account_like_numbers_and_12_digit_ids() -> None:
+    text = "Reference 123456789012 and account-like value 9988776655443322."
+
+    result = redact_text(text)
+
+    assert "123456789012" not in result.text
+    assert "9988776655443322" not in result.text
+    assert any(finding.label in {"ID_12_DIGIT", "LONG_NUMBER"} for finding in result.findings)
+
+
+def test_redacts_simple_address() -> None:
+    text = "Service address: 1400 Lake Road Apt 5"
+
+    result = redact_text(text)
+
+    assert "1400 Lake Road" not in result.text
+    assert "[REDACTED_ADDRESS]" in result.text

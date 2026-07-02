@@ -1,35 +1,55 @@
 # Evaluation
 
-Phase 1 uses deterministic tests and source-grounded checks so the project can be evaluated without live model access.
+Prompt 1.1 adds fixture-based evaluation in `evals/cases.json` and `evals/run_evals.py`.
 
-## Current Checks
+## Run
 
-`tests/test_redaction.py` verifies that common sensitive fields are removed while useful non-sensitive facts remain available.
+```powershell
+python evals/run_evals.py
+```
 
-`tests/test_deadline_parser.py` verifies absolute dates, relative dates, business-day windows, and overdue detection.
+## Coverage
 
-`nextstep_agent/verifier.py` performs runtime checks that action items have evidence and that drafts avoid common unsupported or unsafe claims.
+The current fixture set covers:
 
-## Manual Demo Evaluation
+- School notice with deadline and student redaction.
+- Invoice with payment due date and amount.
+- Utility bill with service interruption risk.
+- Appointment slip with preparation actions.
+- NGO intake form with sensitive support documents.
 
-For each sample document, check:
+Each case checks:
 
-- Were the key facts extracted?
-- Were deadlines parsed relative to the supplied current date?
-- Did risk level reflect urgency and consequence?
-- Did MCP resource and template lookup influence the plan or draft?
-- Did the draft avoid unsupported commitments?
-- Were sensitive values redacted from the final output?
+- Expected `document_type`.
+- At least one deadline or expected deadline phrase.
+- Expected risk level.
+- Whether redaction is expected.
+- Minimum action item count.
+- Verification pass/fail.
 
-## Future Evaluation Set
+## Unit Tests
 
-Prompt 1.1 should add a small fixture-based evaluation suite with expected facts and deadlines for each document type:
+```powershell
+python -m pytest -q
+```
 
-- School notice
-- Invoice
-- Utility bill
-- Appointment slip
-- Small-business notice
-- NGO intake form
+Tests cover:
 
-Each fixture should score extraction, deadline accuracy, action relevance, verification outcome, and redaction completeness.
+- Redaction patterns.
+- Deadline parsing.
+- Document loading.
+- Pipeline JSON/trace metadata.
+- Evaluation fixture pass/fail behavior.
+
+## Current Limitations
+
+- Eval fixtures are deterministic text cases, not a broad benchmark.
+- Gemini output quality is not scored separately yet.
+- OCR and scanned document cases are intentionally deferred.
+
+## Prompt 1.2 Evaluation Ideas
+
+- Add golden JSON snapshots for every case.
+- Add Gemini-vs-heuristic comparison metrics.
+- Add OCR fixtures once image input is implemented.
+- Add rubric scoring for action usefulness and draft quality.
