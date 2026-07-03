@@ -5,6 +5,7 @@ Target length: 4-5 minutes.
 ## Screen Recording Checklist
 
 - Browser tab open to the GitHub README.
+- Browser tab open to the public app: `PASTE_STREAMLIT_URL_HERE`.
 - Terminal open at the repository root.
 - Streamlit app ready or easy to start with `streamlit run app.py`.
 - Demo files available in `demo_pack/`.
@@ -40,21 +41,21 @@ NextStep Agent handles that workflow with a traceable multi-agent pipeline. It e
 This is organizational assistance only. It is not legal, medical, or financial advice.
 ```
 
-### 0:55-1:25 - Streamlit Landing View
+### 0:55-1:25 - Public App Demo
 
-Show: Streamlit app landing page.
+Show: deployed Streamlit app at `PASTE_STREAMLIT_URL_HERE`.
 
 Narration:
 
 ```text
-The project has two demo surfaces. The CLI is best for reproducible traces and JSON output. The Streamlit app is best for a judge-friendly review. It supports pasted text, sample documents, text files, Markdown, text-based PDFs, and optional Gemini-backed image extraction.
+The public Streamlit demo is deployed at PASTE_STREAMLIT_URL_HERE. The app is the judge-friendly review surface. It supports pasted text, sample documents, text files, Markdown, text-based PDFs, and optional Gemini-backed image extraction.
 
-Gemini is optional. If no API key is configured, deterministic text extraction still works and the evaluation suite remains fully reproducible.
+Gemini is optional and configured only through Streamlit Community Cloud secrets when available. If no API key is configured, deterministic text extraction still works and the evaluation suite remains fully reproducible.
 ```
 
 ### 1:25-2:10 - School Notice Trace
 
-Show terminal command:
+Show: public app school notice sample, then terminal trace command if desired.
 
 ```powershell
 python -m nextstep_agent.agent demo_pack/demo_school_notice.txt --current-date 2026-07-02 --trace
@@ -68,7 +69,7 @@ Here is the school notice demo. The trace shows the named stages: Intake, Extrac
 The notice is transformed into typed facts, a deadline, risk assessment, and next steps. Because the permission form is due soon and involves a student, the risk is elevated. The final response includes a checklist and a safe draft while redacting the student name, student ID, and contact information.
 ```
 
-### 2:10-2:45 - MCP Tool Calls
+### 2:10-2:45 - Agent Trace And MCP Tool Calls
 
 Show: MCP calls in CLI trace or Streamlit MCP section.
 
@@ -80,9 +81,9 @@ MCP usage is real in this project. The pipeline calls a local MCP-style server f
 Those tool calls affect the output. The deadline tool normalizes dates, the resource tools supply local guidance and templates, the task tool stores redacted actions, and the safety check helps catch risky draft language.
 ```
 
-### 2:45-3:15 - Invoice Structured Output
+### 2:45-3:15 - Invoice Demo
 
-Show terminal command:
+Show: invoice sample in Streamlit cards or terminal JSON output.
 
 ```powershell
 python -m nextstep_agent.agent demo_pack/demo_invoice.txt --current-date 2026-07-02 --json
@@ -124,14 +125,14 @@ The deterministic evaluation suite covers ten scenarios: school notice, invoice,
 The current release candidate passes 10 out of 10 scenarios with an 80 out of 80 deterministic score.
 ```
 
-### 4:15-4:40 - Architecture Diagram
+### 4:15-4:40 - Deployability Proof
 
-Show: `docs/architecture.md` diagram or README diagram.
+Show: deployed app URL, `docs/deployment.md`, and README deployment section.
 
 Narration:
 
 ```text
-The architecture is intentionally scoped for a five-day capstone: document loader, typed schemas, named agents, local MCP tools, verification, redaction, task storage, CLI, Streamlit UI, and deterministic evals. It is ADK-aligned, but it still runs locally without requiring cloud setup.
+The project is deployed on Streamlit Community Cloud and remains reproducible locally. Secrets are configured only through Streamlit settings, not committed to GitHub. The architecture is intentionally scoped for a five-day capstone: document loader, typed schemas, named agents, local MCP tools, verification, redaction, task storage, CLI, Streamlit UI, and deterministic evals.
 ```
 
 ### 4:40-5:00 - Closing Impact
@@ -147,13 +148,13 @@ NextStep Agent is built for a common, practical problem: turning confusing docum
 ## Required Shots
 
 1. GitHub README top section.
-2. Streamlit app landing view.
+2. Public Streamlit app landing view at `PASTE_STREAMLIT_URL_HERE`.
 3. School notice run with trace.
 4. Invoice run with JSON output or Streamlit cards.
 5. MCP tool calls section.
 6. Redaction and security section.
 7. Eval report showing 10/10 and 80/80.
-8. Architecture diagram.
+8. Deployability proof and architecture diagram.
 9. Closing impact slide or README tagline.
 
 ## Commands To Capture

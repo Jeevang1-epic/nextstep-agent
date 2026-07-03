@@ -2,6 +2,14 @@
 
 NextStep Agent deploys as a Streamlit app and also runs locally without any API key through deterministic extraction.
 
+Deployment status: complete.
+
+Public Streamlit demo:
+
+```text
+PASTE_STREAMLIT_URL_HERE
+```
+
 ## Local Run
 
 ```powershell
@@ -11,39 +19,27 @@ streamlit run app.py
 
 Open the local URL shown by Streamlit, choose the school notice sample, and run the pipeline.
 
-## Manual Streamlit Community Cloud Deployment
+## Streamlit Community Cloud Deployment
 
-1. Push the repository to GitHub.
-2. Go to Streamlit Community Cloud.
-3. Choose **New app**.
-4. Select the public GitHub repository.
-5. Select the main branch.
-6. Set the main file path to `app.py`.
-7. Confirm `requirements.txt` is at the repository root.
-8. Open app secrets or advanced settings.
-9. Add `GOOGLE_API_KEY` only if Gemini is available.
-10. Optionally add `NEXTSTEP_MODEL = "gemini-flash-latest"`.
-11. Deploy the app.
-12. Test the deployed app with `demo_pack/demo_school_notice.txt` or the built-in sample dropdown.
-13. Confirm the page shows extracted facts, risk, MCP calls, next steps, verification, redaction, and saved task metadata.
-14. Copy the deployed URL into `README.md` and `SUBMISSION_CHECKLIST.md`.
+Completed deployment path:
 
-Placeholder to replace after deployment:
-
-```text
-STREAMLIT_PUBLIC_URL_HERE
-```
+1. Repository pushed to GitHub.
+2. Streamlit Community Cloud app created from the public repository.
+3. Main file path set to `app.py`.
+4. `requirements.txt` used from the repository root.
+5. Deployed app tested with the school notice and invoice demo flows.
+6. Public URL added to README, submission checklist, release notes, and writeup.
 
 ## Streamlit Secrets
 
-Use `.streamlit/secrets.toml.example` as the local template:
+Use `.streamlit/secrets.toml.example` as the local template only. For the deployed app, configure `GOOGLE_API_KEY` only through Streamlit Community Cloud secrets.
 
 ```toml
 GOOGLE_API_KEY = "your_key_here"
 NEXTSTEP_MODEL = "gemini-flash-latest"
 ```
 
-Do not commit `.streamlit/secrets.toml`. In Streamlit Community Cloud, paste secrets into the app settings, not into the repository.
+Do not commit `.env`, `.streamlit/secrets.toml`, or any API key. The repository contains no committed secrets.
 
 ## Fallback Demo Without Gemini API Key
 
@@ -70,6 +66,8 @@ Gemini is optional in this release candidate. The deterministic text pipeline is
 - `.env` is not committed.
 - `.streamlit/secrets.toml` is not committed.
 - `data/tasks.jsonl` is not committed.
-- Public Streamlit app loads.
+- Public Streamlit app loads at `PASTE_STREAMLIT_URL_HERE`.
 - School notice sample works in the deployed app.
-- Public app URL is added to `README.md` and `SUBMISSION_CHECKLIST.md`.
+- Invoice sample works in the deployed app.
+- Agent trace, MCP calls, verification, and redaction are visible.
+- Public app URL is added to `README.md`, `SUBMISSION_CHECKLIST.md`, release notes, and writeup.

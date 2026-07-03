@@ -4,6 +4,12 @@
 
 NextStep Agent is ready as a Kaggle AI Agents Intensive capstone release candidate.
 
+Public Streamlit demo:
+
+```text
+PASTE_STREAMLIT_URL_HERE
+```
+
 ## Features Completed
 
 - Multi-agent document-to-action pipeline.
@@ -16,7 +22,8 @@ NextStep Agent is ready as a Kaggle AI Agents Intensive capstone release candida
 - Verification against unsupported payment, legal, or medical claims.
 - Persistent local JSONL task storage.
 - Ten deterministic evaluation scenarios with 80/80 score.
-- Streamlit deployment configuration and secrets example.
+- Streamlit deployment verified on Community Cloud.
+- Streamlit secrets path documented; no API keys are committed.
 - Kaggle writeup draft, demo script, media prompts, and golden demo snapshots.
 
 ## Known Limitations
@@ -36,13 +43,12 @@ NextStep Agent is ready as a Kaggle AI Agents Intensive capstone release candida
 - `python -m nextstep_agent.agent demo_pack/demo_invoice.txt --current-date 2026-07-02 --json` -> passed.
 - `python scripts/final_qa.py` -> passed.
 - Streamlit local start verified.
+- Streamlit Community Cloud deployment verified at `PASTE_STREAMLIT_URL_HERE`.
 
 ## Submission Readiness
 
 Ready for final manual steps:
 
-- Deploy Streamlit.
-- Add public app URL.
 - Record and upload demo video.
 - Submit Kaggle writeup.
 - Add final links to `SUBMISSION_CHECKLIST.md`.

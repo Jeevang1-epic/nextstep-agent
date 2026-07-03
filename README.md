@@ -12,12 +12,12 @@ NextStep Agent is a multimodal document-to-action concierge for school notices, 
 - A single chatbot response can be hard to inspect, verify, or safely reuse.
 - NextStep Agent makes the workflow traceable: agents, tools, risk checks, verification, redaction, and evaluations are visible.
 
-## Demo Screenshot Placeholder
+## Public Demo
 
-Add the final Streamlit screenshot here after deployment.
+Streamlit Community Cloud demo:
 
 ```text
-STREAMLIT_PUBLIC_URL_HERE
+PASTE_STREAMLIT_URL_HERE
 ```
 
 Recommended screenshot: Streamlit app with the school notice sample, agent trace, MCP tool calls, redaction panel, and action plan visible.
@@ -62,7 +62,7 @@ The app can be run locally and deployed on Streamlit Community Cloud. It include
 1. Read the top of this README.
 2. Scan the competition alignment table.
 3. Run `python evals/run_evals.py` and confirm `10 passed, 0 failed, 80/80`.
-4. Run the school notice trace command in the Quick Demo section.
+4. Open the public demo at `PASTE_STREAMLIT_URL_HERE` or run the school notice trace command locally.
 
 ### 5-Minute Review Path
 
@@ -203,15 +203,13 @@ The suite covers school, invoice, utility, appointment, NGO intake, rental maint
 
 Deployment is documented in `docs/deployment.md`.
 
-Short version:
+Public demo:
 
-1. Push the repo to GitHub.
-2. Create a Streamlit Community Cloud app.
-3. Select this repository.
-4. Set the main file to `app.py`.
-5. Add `GOOGLE_API_KEY` in secrets only if Gemini is available.
-6. Deploy and test the school notice sample.
-7. Replace `STREAMLIT_PUBLIC_URL_HERE` in this README and `SUBMISSION_CHECKLIST.md`.
+```text
+PASTE_STREAMLIT_URL_HERE
+```
+
+The deployed app uses Streamlit Community Cloud. `GOOGLE_API_KEY`, if available, is configured only through Streamlit secrets and is not committed to this repository.
 
 ## Repository Structure
 

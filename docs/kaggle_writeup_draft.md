@@ -2,6 +2,12 @@
 
 ## Track: Concierge Agents
 
+## Project Links
+
+- Public demo: `PASTE_STREAMLIT_URL_HERE`
+- GitHub repository: `https://github.com/Jeevang1-epic/nextstep-agent`
+- Track: Concierge Agents
+
 NextStep Agent turns confusing real-world documents into safe, verified next steps. The project focuses on the everyday moment when a person receives a school notice, invoice, utility bill, appointment slip, small-business notice, or intake form and does not immediately know what matters, what is due, what could go wrong, or what can be safely shared. Instead of producing one broad chat answer, NextStep Agent runs a traceable agent workflow: extract facts, detect deadlines, assess risk, call MCP-backed local resources, create prioritized tasks, draft a cautious response or checklist, verify the draft against the source, redact sensitive information, and save redacted tasks locally.
 
 The selected track is Concierge Agents because the system helps a user complete a practical workflow from messy input to a clear plan. It is not legal, medical, or financial advice. It is organizational assistance that helps the user prepare, verify, and act more confidently.
@@ -41,7 +47,7 @@ This makes the system inspectable. The CLI trace and Streamlit app show the stag
 
 The project supports pasted text, `.txt`, `.md`, text-based `.pdf`, and optional Gemini-backed image input. Gemini is optional. Without `GOOGLE_API_KEY`, the deterministic text pipeline still runs, tests pass, and evals are reproducible. With a key, Gemini can provide structured extraction and image understanding. If image extraction is requested without Gemini, the app explains the limitation instead of failing silently.
 
-The final output is a Pydantic `FinalResponse` containing extracted facts, risk assessment, action plan, draft output, verification report, redacted output, MCP trace, and saved task metadata. This keeps the result easy to test and easy to present.
+The final output is a Pydantic `FinalResponse` containing extracted facts, risk assessment, action plan, draft output, verification report, redacted output, MCP trace, and saved task metadata. This keeps the result easy to test and easy to present. The deployed Streamlit demo at `PASTE_STREAMLIT_URL_HERE` exposes the same workflow through a judge-friendly interface.
 
 ## Architecture
 
@@ -103,7 +109,7 @@ The runner writes `evals/eval_report.md`, and `scripts/final_qa.py` runs the rel
 
 The strongest demo is the school notice. It shows a realistic deadline, student context, MCP deadline calculation, policy/template lookup, action plan, draft checklist, verification, redaction, and task storage. The second demo is an invoice shown as JSON, which proves the output is structured. The Streamlit app then provides the judge-friendly interactive view with cards for facts, risk, MCP calls, next steps, verification, redaction, and saved tasks.
 
-The demo can be recorded without an API key. If a Gemini key is available, a short optional segment can compare deterministic extraction with Gemini structured extraction.
+The deployed Streamlit demo is available at `PASTE_STREAMLIT_URL_HERE`. The demo can be recorded without an API key because deterministic text extraction remains the reliable baseline. If Gemini is available in Streamlit secrets, a short optional segment can compare deterministic extraction with Gemini structured extraction.
 
 ## Limitations
 
