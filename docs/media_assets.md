@@ -17,3 +17,15 @@ Minimal GitHub social preview for "NextStep Agent". Layout: title, tagline, smal
 ## Simple Architecture Image
 
 Architecture diagram image prompt: Document upload or pasted text flows into Intake Agent, Extraction Agent, Risk & Priority Agent, Resource Lookup Agent with MCP tools, Action Planner Agent, Drafting Agent, Verification Agent, Redaction Agent, then FinalResponse and saved tasks. Style: simple product architecture diagram, white background, thin lines, readable labels, professional technical presentation.
+
+## Screenshot Checklist
+
+Capture these screenshots after the Streamlit visual polish is deployed:
+
+- Hero and input screen with the proof strip and how-it-works cards visible.
+- School notice output showing extracted facts, risk, next-step plan, and redacted final output.
+- Invoice output showing structured result cards and saved tasks.
+- Agent trace and MCP tools sections showing stage execution and tool calls.
+- Eval terminal result showing 10 passed scenarios and 80/80 score.
+
+Keep screenshots clean: no browser bookmarks, no secrets, no local `.env` files, no personal folders, and no real user documents.
